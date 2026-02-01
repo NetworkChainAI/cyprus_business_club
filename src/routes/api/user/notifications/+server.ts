@@ -2,52 +2,63 @@ import type { RequestEvent } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import { verifyJwt } from '$lib/jwt';
 
+const json = (data: any, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  });
+
 export const GET = async ({ cookies }: RequestEvent) => {
   try {
     const token = cookies.get('auth_token');
-    if (!token) return new Response('Unauthorized', { status: 401 });
+
+    if (!token) {
+      return json({ notifications: [] });
+    }
 
     const payload = await verifyJwt(token);
-    if (!payload?.uid) return new Response('Invalid token', { status: 401 });
+
+    if (!payload?.uid) {
+      return json({ notifications: [] });
+    }
 
     const notifications = await prisma.notification.findMany({
       where: { userId: payload.uid },
       orderBy: { createdAt: 'desc' }
     });
 
-    return new Response(JSON.stringify({ notifications }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-
+    return json({ notifications });
   } catch (err) {
     console.error('Notifications GET error:', err);
-    return new Response('Internal server error', { status: 500 });
+
+    return json({ notifications: [] });
   }
 };
-
 
 export const POST = async ({ cookies, request }: RequestEvent) => {
   try {
     const token = cookies.get('auth_token');
-    if (!token) return new Response('Unauthorized', { status: 401 });
+
+    if (!token) {
+      return json({ ok: false });
+    }
 
     const payload = await verifyJwt(token);
-    if (!payload?.uid) return new Response('Invalid token', { status: 401 });
+    if (!payload?.uid) {
+      return json({ ok: false });
+    }
 
     const { id } = await request.json();
-
-    if (!id) return new Response('Notification ID required', { status: 400 });
+    if (!id) return json({ ok: false });
 
     await prisma.notification.update({
       where: { id },
       data: { isRead: true }
     });
 
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
-
+    return json({ ok: true });
   } catch (err) {
     console.error('Notifications POST error:', err);
-    return new Response('Internal server error', { status: 500 });
+    return json({ ok: false });
   }
 };
