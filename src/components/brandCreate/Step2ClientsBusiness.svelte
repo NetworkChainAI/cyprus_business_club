@@ -1,10 +1,14 @@
 <script lang="ts">
+  import SearchDropdown from "../SearchDropdown.svelte";
+
+
   type BrandTagType =
     | "AUDIENCE"
     | "PAIN"
     | "SOLUTION"
     | "MONETIZATION"
     | "CLIENT";
+
   type BrandTag = { id: string; type: BrandTagType; title: string };
 
   export let description: string;
@@ -32,106 +36,7 @@
     "MONETIZATION",
   ];
 
-  // dropdown open state
-  let tagOpen: Record<BrandTagType, boolean> = {
-    AUDIENCE: false,
-    PAIN: false,
-    SOLUTION: false,
-    MONETIZATION: false,
-    CLIENT: false,
-  };
-
-  // ✅ one reactive search object
-  let searchByType: Record<BrandTagType, string> = {
-    AUDIENCE: "",
-    PAIN: "",
-    SOLUTION: "",
-    CLIENT: "",
-    MONETIZATION: "",
-  };
-
-  function openTagDropdown(type: BrandTagType) {
-    tagOpen = {
-      AUDIENCE: false,
-      PAIN: false,
-      SOLUTION: false,
-      CLIENT: false,
-      MONETIZATION: false,
-      [type]: !tagOpen[type],
-    } as any;
-  }
-
-  function setSearch(type: BrandTagType, value: string) {
-    // ✅ reassign object -> guaranteed reactivity
-    searchByType = { ...searchByType, [type]: value ?? "" };
-  }
-
-  // ✅ reactive filtered lists by type (stable search)
-  let filteredByType: Record<BrandTagType, BrandTag[]> = {
-    AUDIENCE: [],
-    PAIN: [],
-    SOLUTION: [],
-    CLIENT: [],
-    MONETIZATION: [],
-  };
-
-  function filterList(type: BrandTagType) {
-    const q = (searchByType[type] || "").trim().toLowerCase();
-    const list = tagsByType?.[type] || [];
-    if (!q) return list;
-    return list.filter((t) => (t.title || "").toLowerCase().includes(q));
-  }
-
-  $: filteredByType = {
-    AUDIENCE: filterList("AUDIENCE"),
-    PAIN: filterList("PAIN"),
-    SOLUTION: filterList("SOLUTION"),
-    CLIENT: filterList("CLIENT"),
-    MONETIZATION: filterList("MONETIZATION"),
-  };
-
-  // ✅ reactive selected by type (instant chips)
-  let selectedByType: Record<BrandTagType, BrandTag[]> = {
-    AUDIENCE: [],
-    PAIN: [],
-    SOLUTION: [],
-    CLIENT: [],
-    MONETIZATION: [],
-  };
-
-  let selectedTitlesByType: Record<BrandTagType, string> = {
-    AUDIENCE: "",
-    PAIN: "",
-    SOLUTION: "",
-    CLIENT: "",
-    MONETIZATION: "",
-  };
-
-  $: selectedByType = {
-    AUDIENCE: (tagsByType?.AUDIENCE || []).filter((t) =>
-      selectedTagIds.includes(t.id)
-    ),
-    PAIN: (tagsByType?.PAIN || []).filter((t) => selectedTagIds.includes(t.id)),
-    SOLUTION: (tagsByType?.SOLUTION || []).filter((t) =>
-      selectedTagIds.includes(t.id)
-    ),
-    CLIENT: (tagsByType?.CLIENT || []).filter((t) =>
-      selectedTagIds.includes(t.id)
-    ),
-    MONETIZATION: (tagsByType?.MONETIZATION || []).filter((t) =>
-      selectedTagIds.includes(t.id)
-    ),
-  };
-
-  $: selectedTitlesByType = {
-    AUDIENCE: selectedByType.AUDIENCE.map((t) => t.title).join(", "),
-    PAIN: selectedByType.PAIN.map((t) => t.title).join(", "),
-    SOLUTION: selectedByType.SOLUTION.map((t) => t.title).join(", "),
-    CLIENT: selectedByType.CLIENT.map((t) => t.title).join(", "),
-    MONETIZATION: selectedByType.MONETIZATION.map((t) => t.title).join(", "),
-  };
-
-  // dynamic fields
+  // ============ helpers ============
   function addProductField() {
     products = [...products, ""];
   }
@@ -154,8 +59,78 @@
       interests = interests.filter((_, idx) => idx !== i);
   }
 
-  async function onToggleTag(id: string) {
-    await toggleTagId(id);
+  // ======= dropdown state for SearchDropdown (selected per type) =======
+  let selectedByTypeIds: Record<BrandTagType, string[]> = {
+    AUDIENCE: [],
+    PAIN: [],
+    SOLUTION: [],
+    CLIENT: [],
+    MONETIZATION: [],
+  };
+
+  // keep selectedByTypeIds in sync with shared selectedTagIds
+  $: selectedByTypeIds = {
+    AUDIENCE: (tagsByType?.AUDIENCE || [])
+      .filter((t) => selectedTagIds.includes(t.id))
+      .map((t) => t.id),
+    PAIN: (tagsByType?.PAIN || [])
+      .filter((t) => selectedTagIds.includes(t.id))
+      .map((t) => t.id),
+    SOLUTION: (tagsByType?.SOLUTION || [])
+      .filter((t) => selectedTagIds.includes(t.id))
+      .map((t) => t.id),
+    CLIENT: (tagsByType?.CLIENT || [])
+      .filter((t) => selectedTagIds.includes(t.id))
+      .map((t) => t.id),
+    MONETIZATION: (tagsByType?.MONETIZATION || [])
+      .filter((t) => selectedTagIds.includes(t.id))
+      .map((t) => t.id),
+  };
+
+  // local "prev" snapshots to compute diff per type (to call toggleTagId only for changed)
+  let prevSelectedByTypeIds: Record<BrandTagType, string[]> = {
+    AUDIENCE: [],
+    PAIN: [],
+    SOLUTION: [],
+    CLIENT: [],
+    MONETIZATION: [],
+  };
+
+  // init prev snapshots once tags are available
+  $: if (tagsByType) {
+    prevSelectedByTypeIds = {
+      AUDIENCE: selectedByTypeIds.AUDIENCE,
+      PAIN: selectedByTypeIds.PAIN,
+      SOLUTION: selectedByTypeIds.SOLUTION,
+      CLIENT: selectedByTypeIds.CLIENT,
+      MONETIZATION: selectedByTypeIds.MONETIZATION,
+    };
+  }
+
+  function toDropdownOptions(type: BrandTagType) {
+    return (tagsByType?.[type] || []).map((t) => ({ id: t.id, name: t.title }));
+  }
+
+  async function handleTagsChange(
+    type: BrandTagType,
+    e: CustomEvent<{ selected: string[]; items: { id: string; name: string }[] }>
+  ) {
+    const next = e.detail.selected ?? [];
+    const prev = prevSelectedByTypeIds[type] ?? [];
+
+    const added = next.filter((id) => !prev.includes(id));
+    const removed = prev.filter((id) => !next.includes(id));
+
+    // update prev snapshot immediately (avoid double toggles)
+    prevSelectedByTypeIds = { ...prevSelectedByTypeIds, [type]: next };
+
+    // IMPORTANT:
+    // SearchDropdown already updates local selection visually,
+    // but the "source of truth" for backend is toggleTagId(id).
+    // We only call toggleTagId for changed ids.
+    for (const id of [...added, ...removed]) {
+      await toggleTagId(id);
+    }
   }
 </script>
 
@@ -164,11 +139,7 @@
 
   <label>
     What does the brand do?
-    <textarea
-      bind:value={description}
-      rows="3"
-      placeholder="Short description..."
-    />
+    <textarea bind:value={description} rows="3" placeholder="Short description..." />
   </label>
 
   <h3>Products / services</h3>
@@ -177,11 +148,9 @@
       <div class="row-field">
         <input bind:value={products[i]} placeholder="e.g. AI assistant" />
         {#if products.length > 1}
-          <button
-            type="button"
-            class="remove"
-            on:click={() => removeProductField(i)}>🗑</button
-          >
+          <button type="button" class="remove" on:click={() => removeProductField(i)}>
+            🗑
+          </button>
         {/if}
       </div>
     {/each}
@@ -197,11 +166,7 @@
       Audience gender
       <div class="chips">
         {#each ["Male", "Female", "All"] as g}
-          <button
-            type="button"
-            class:active={gender.includes(g)}
-            on:click={() => toggleGender(g)}
-          >
+          <button type="button" class:active={gender.includes(g)} on:click={() => toggleGender(g)}>
             {g}
           </button>
         {/each}
@@ -234,11 +199,9 @@
       <div class="row-field">
         <input bind:value={geo[i]} placeholder="e.g. Cyprus" />
         {#if geo.length > 1}
-          <button
-            type="button"
-            class="remove"
-            on:click={() => removeGeoField(i)}>🗑</button
-          >
+          <button type="button" class="remove" on:click={() => removeGeoField(i)}>
+            🗑
+          </button>
         {/if}
       </div>
     {/each}
@@ -251,11 +214,9 @@
       <div class="row-field">
         <input bind:value={interests[i]} placeholder="e.g. fintech" />
         {#if interests.length > 1}
-          <button
-            type="button"
-            class="remove"
-            on:click={() => removeInterestField(i)}>🗑</button
-          >
+          <button type="button" class="remove" on:click={() => removeInterestField(i)}>
+            🗑
+          </button>
         {/if}
       </div>
     {/each}
@@ -267,65 +228,16 @@
   {#if loadingTags}
     <div class="muted">Loading suggestions...</div>
   {:else}
-    <div class="dropdown">
-      <button
-        type="button"
-        class="dropdown-btn"
-        on:click={() => openTagDropdown("AUDIENCE")}
-      >
-        {#if selectedByType.AUDIENCE.length}
-          {selectedTitlesByType.AUDIENCE}
-        {:else}
-          Select segments
-        {/if}
-        <span class="chev">{tagOpen.AUDIENCE ? "▲" : "▼"}</span>
-      </button>
-
-      {#if selectedByType.AUDIENCE.length}
-        <div class="selected-chips">
-          {#each selectedByType.AUDIENCE as t (t.id)}
-            <button
-              type="button"
-              class="chip"
-              on:click={() => onToggleTag(t.id)}
-              title="Remove"
-            >
-              {t.title}<span class="x">×</span>
-            </button>
-          {/each}
-        </div>
-      {/if}
-
-      {#if tagOpen.AUDIENCE}
-        <div class="dropdown-menu">
-          <input
-            class="search"
-            placeholder="Search..."
-            value={searchByType.AUDIENCE}
-            on:input={(e) =>
-              setSearch(
-                "AUDIENCE",
-                (e.currentTarget as HTMLInputElement).value
-              )}
-          />
-          <div class="menu-list">
-            {#each filteredByType.AUDIENCE as t (t.id)}
-              <label class="menu-item">
-                <input
-                  type="checkbox"
-                  checked={selectedTagIds.includes(t.id)}
-                  on:change={() => onToggleTag(t.id)}
-                />
-                <span>{t.title}</span>
-              </label>
-            {/each}
-            {#if filteredByType.AUDIENCE.length === 0}
-              <div class="muted">Nothing found</div>
-            {/if}
-          </div>
-        </div>
-      {/if}
-    </div>
+    <SearchDropdown
+      options={toDropdownOptions("AUDIENCE")}
+      selected={selectedByTypeIds.AUDIENCE}
+      multiple={true}
+      placeholder="Select segments"
+      searchPlaceholder="Search..."
+      maxItems={null}
+      maxChips={3}
+      on:change={(e) => handleTagsChange("AUDIENCE", e)}
+    />
   {/if}
 </section>
 
@@ -343,55 +255,16 @@
         {#if type === "MONETIZATION"}Monetization{/if}
       </h3>
 
-      <div class="dropdown">
-        <button
-          type="button"
-          class="dropdown-btn"
-          on:click={() => openTagDropdown(type)}
-        >
-          {#if selectedByType[type].length}
-            {selectedTitlesByType[type]}
-          {:else}
-            Select {type.toLowerCase()}
-          {/if}
-          <span class="chev">{tagOpen[type] ? "▲" : "▼"}</span>
-        </button>
-
-        {#if selectedByType[type].length}
-          <div class="selected-chips">
-            {#each selectedByType[type] as t (t.id)}
-              <button
-                type="button"
-                class="chip"
-                on:click={() => onToggleTag(t.id)}
-                title="Remove"
-              >
-                {t.title}<span class="x">×</span>
-              </button>
-            {/each}
-          </div>
-        {/if}
-
-        {#if tagOpen[type]}
-          <div class="dropdown-menu">
-            <div class="menu-list">
-              {#each filteredByType[type] as t (t.id)}
-                <label class="menu-item">
-                  <input
-                    type="checkbox"
-                    checked={selectedTagIds.includes(t.id)}
-                    on:change={() => onToggleTag(t.id)}
-                  />
-                  <span>{t.title}</span>
-                </label>
-              {/each}
-              {#if filteredByType[type].length === 0}
-                <div class="muted">Nothing found</div>
-              {/if}
-            </div>
-          </div>
-        {/if}
-      </div>
+      <SearchDropdown
+        options={toDropdownOptions(type)}
+        selected={selectedByTypeIds[type]}
+        multiple={true}
+        placeholder={"Select " + type.toLowerCase()}
+        searchPlaceholder="Search..."
+        maxItems={null}
+        maxChips={3}
+        on:change={(e) => handleTagsChange(type, e)}
+      />
     {/each}
   {/if}
 </section>
