@@ -53,10 +53,9 @@
 
 <header>
   <div class="container">
-<a href="/" class="logo" aria-label="Go to home">
-  <img src="/assets/images/cbc/logo-cbc-dark.svg" alt="Logo" />
-</a>
-
+    <a href="/" class="logo" aria-label="Go to home">
+      <img src="/assets/images/cbc/logo-cbc-dark.svg" alt="Logo" />
+    </a>
 
     <!-- BURGER -->
     <button
@@ -165,13 +164,6 @@
             </a>
 
             <div class="devider"></div>
-
-            <a href="/custody" on:click={() => (openDropdown = null)}>
-              <span class="item-icon">
-                <iconify-icon icon="lucide:shield" width="18"></iconify-icon>
-              </span>
-              Custody
-            </a>
           </div>
         {/if}
       </div>
@@ -192,6 +184,9 @@
           {/if}
         </div>
       </a>
+      <a href="/custody" class="wallet-icon" aria-label="Wallet">
+        <ion-icon name="wallet-outline"></ion-icon>
+      </a>
 
       <Notifications />
       <UserAvatar showName={false} />
@@ -206,6 +201,27 @@
     position: sticky;
     top: 0;
     z-index: 50;
+  }
+  .wallet-icon {
+    margin-right: 16px;
+    color: black;
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    opacity: 0.85;
+    transition:
+      opacity 0.2s,
+      transform 0.15s;
+  }
+
+  .wallet-icon:hover {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  .wallet-icon ion-icon {
+    width: 20px;
+    height: 20px;
   }
 
   .container {
