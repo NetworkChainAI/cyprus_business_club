@@ -176,49 +176,63 @@
   <div class="grid">
     {#each filteredEvents as event (event.id)}
       <a href={`/events/${event.id}`} class="card">
-        <div class="img-wrapper">
-          <img
-            src={event.photo
-              ? `/api/photo/${event.photo.split("/").pop()}`
-              : "/assets/images/placeholder-event.jpg"}
-            alt={event.title}
-          />
-          <div class="badge">
-            {event.price ? `€${event.price}` : "Free"}
-          </div>
-        </div>
+  <div class="img-wrapper">
+    <img
+      src={event.photo
+        ? `/api/photo/${event.photo.split("/").pop()}`
+        : "/assets/images/placeholder-event.jpg"}
+      alt={event.title}
+    />
 
-        <div class="card-content">
-          <h3>{event.title}</h3>
+    <div class="img-overlay"></div>
 
-          {#if event.categories?.length}
-            <div class="card-chips">
-              {#each event.categories.slice(0, 2) as c}
-                <span class="chip">{c.name}</span>
-              {/each}
+    <div class="top-badges">
+      <span class="price-badge">
+        {event.price ? `€${event.price}` : "Free"}
+      </span>
+    </div>
 
-              {#if event.categories.length > 2}
-                <span class="chip ghost">+{event.categories.length - 2}</span>
-              {/if}
-            </div>
-          {/if}
-          <div class="meta">
-            <p class="location">
-              <span class="icon">📍</span>
-              {event.location}
-            </p>
+    <div class="date-pill">
+      <span class="day">
+        {new Date(event.date).getDate()}
+      </span>
+      <span class="month">
+        {new Date(event.date).toLocaleString("en", { month: "short" })}
+      </span>
+    </div>
+  </div>
 
-            <p class="date">
-              <span class="icon">📅</span>
-              {new Date(event.date).toLocaleDateString("ru-RU", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          </div>
-        </div>
-      </a>
+  <div class="card-content">
+    <h3>{event.title}</h3>
+
+    {#if event.categories?.length}
+      <div class="card-chips">
+        {#each event.categories.slice(0, 2) as c}
+          <span class="chip">{c.name}</span>
+        {/each}
+        {#if event.categories.length > 2}
+          <span class="chip ghost">+{event.categories.length - 2}</span>
+        {/if}
+      </div>
+    {/if}
+
+    <div class="meta">
+      <p class="location">
+        📍 {event.location}
+      </p>
+
+      <p class="date-text">
+        {new Date(event.date).toLocaleDateString("ru-RU", {
+          weekday: "short",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}
+      </p>
+    </div>
+  </div>
+</a>
+
     {/each}
   </div>
 {/if}
@@ -523,4 +537,69 @@
   .meta p {
     margin: 0;
   }
+  .img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.55)
+  );
+}
+
+.top-badges {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}
+
+.price-badge {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0b3954;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.date-pill {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 2;
+  background: white;
+  border-radius: 10px;
+  padding: 6px 10px;
+  text-align: center;
+  line-height: 1;
+}
+
+.date-pill .day {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0b3954;
+}
+
+.date-pill .month {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.card-content h3 {
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.date-text {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.card {
+  height: auto;
+  min-height: 360px;
+}
+
 </style>
