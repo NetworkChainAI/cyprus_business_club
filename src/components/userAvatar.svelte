@@ -16,7 +16,6 @@
   let loading = true;
   let menuOpen = false;
 
-  // закрыть меню при клике вне
   const handleOutsideClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
     if (!target.closest(".user-avatar")) {
@@ -39,11 +38,13 @@
   async function loadUser() {
     try {
       const res = await fetch("/api/user/profile");
-      if (res.ok) {
-        user = await res.json();
-      } else {
+      if (!res.ok) {
         user = null;
+        return;
       }
+
+      const data = await res.json();
+      user = data?.user ?? null;
     } catch (err) {
       console.error("Failed to fetch user:", err);
       user = null;
