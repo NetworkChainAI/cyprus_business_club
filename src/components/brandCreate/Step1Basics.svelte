@@ -1,4 +1,7 @@
 <script lang="ts">
+  import SearchDropdown from "../SearchDropdown.svelte";
+
+
   type Category = { id: string; name: string };
 
   export let name: string;
@@ -26,47 +29,48 @@
   export let onLogoChange: (e: Event) => void;
   export let toggleCategory: (cat: Category) => Promise<void>;
 
-  // UI только для этого шага
-  let catsOpen = false;
-  let catsSearch = "";
-  let catsSearchEl: HTMLInputElement | null = null;
-
-  function toggleCatsOpen() {
-    catsOpen = !catsOpen;
-
-    // если закрыли — очищаем поиск
-    if (!catsOpen) {
-      catsSearch = "";
-      return;
-    }
-
-    // если открыли — фокус на инпут
-    queueMicrotask(() => catsSearchEl?.focus());
-  }
-
-  function filteredCats() {
-    const q = (catsSearch || "").trim().toLowerCase();
-    if (!q) return categories;
-    return categories.filter((c) => (c.name || "").toLowerCase().includes(q));
-  }
-
-  // Brand type dropdown (оставил как было)
-  let brandTypeOpen = false;
+  // ===== Brand type options for SearchDropdown =====
   const brandTypeOptions = [
-    { value: "PERSONAL" as const, label: "Personal brand" },
-    { value: "COMPANY" as const, label: "Company" },
-  ];
+    { id: "PERSONAL", name: "Personal brand" },
+    { id: "COMPANY", name: "Company" }
+  ] as const;
 
-  $: brandTypeText =
-    brandTypeOptions.find((o) => o.value === brandType)?.label || "Select type";
+  // SearchDropdown работает со string[] selected
+  $: brandTypeSelected = brandType ? [brandType] : [];
 
-  async function pickBrandType(val: "PERSONAL" | "COMPANY") {
-    brandType = val;
-    brandTypeOpen = false;
+  function handleBrandTypeChange(e: CustomEvent<{ selected: string[] }>) {
+    const next = (e.detail.selected?.[0] as "PERSONAL" | "COMPANY" | undefined) ?? undefined;
+    if (!next) return; // если сняли выбор — ничего не делаем (можно поменять логику при желании)
+    brandType = next;
   }
 
-  // ✅ chips: получить выбранные категории как объекты
-  $: selectedCats = categories.filter((c) => selectedCategoryIds.includes(c.id));
+  // ===== Categories change handling with diff =====
+  let prevCategoryIds: string[] = [];
+
+  $: prevCategoryIds = prevCategoryIds.length ? prevCategoryIds : selectedCategoryIds;
+
+  async function handleCategoriesChange(
+    e: CustomEvent<{ selected: string[]; items: { id: string; name: string }[] }>
+  ) {
+    const nextIds = e.detail.selected ?? [];
+    const prevIds = prevCategoryIds ?? [];
+
+    const added = nextIds.filter((id) => !prevIds.includes(id));
+    const removed = prevIds.filter((id) => !nextIds.includes(id));
+
+    // обновляем имена (UI)
+    selectedCategoryNames = (e.detail.items ?? []).map((x) => x.name);
+
+    // чтобы bind:selectedCategoryIds тоже обновился
+    selectedCategoryIds = nextIds;
+    prevCategoryIds = nextIds;
+
+    // дергаем твою текущую логику (синхронизация/сервер/и т.п.)
+    for (const id of [...added, ...removed]) {
+      const cat = categories.find((c) => c.id === id);
+      if (cat) await toggleCategory(cat);
+    }
+  }
 </script>
 
 <!-- ================= BASICS ================= -->
@@ -80,33 +84,15 @@
 
   <label>
     Brand type *
-    <div class="dropdown">
-      <button
-        type="button"
-        class="dropdown-btn"
-        on:click={() => (brandTypeOpen = !brandTypeOpen)}
-      >
-        {brandTypeText}
-        <span class="chev">{brandTypeOpen ? "▲" : "▼"}</span>
-      </button>
-
-      {#if brandTypeOpen}
-        <div class="dropdown-menu">
-          <div class="menu-list">
-            {#each brandTypeOptions as opt}
-              <button
-                type="button"
-                class="menu-btn"
-                class:active={brandType === opt.value}
-                on:click={() => pickBrandType(opt.value)}
-              >
-                {opt.label}
-              </button>
-            {/each}
-          </div>
-        </div>
-      {/if}
-    </div>
+    <SearchDropdown
+      options={brandTypeOptions as unknown as { id: string; name: string }[]}
+      selected={brandTypeSelected}
+      multiple={false}
+      placeholder="Select type"
+      searchPlaceholder="Search..."
+      maxChips={1}
+      on:change={handleBrandTypeChange}
+    />
   </label>
 
   <label>
@@ -132,52 +118,19 @@
   {#if loadingCategories}
     <div class="muted">Loading categories...</div>
   {:else}
-    <div class="dropdown">
-      <button type="button" class="dropdown-btn" on:click={toggleCatsOpen}>
-        {#if selectedCategoryNames.length}
-          {selectedCategoryNames.join(", ")}
-        {:else}
-          Select categories
-        {/if}
-        <span class="chev">{catsOpen ? "▲" : "▼"}</span>
-      </button>
+   <SearchDropdown
+  options={categories}
+  bind:selected={selectedCategoryIds}
+  multiple={true}
+  placeholder="Select categories"
+  searchPlaceholder="Search..."
+  maxItems={null}
+  maxChips={3}
+  on:change={(e) => {
+    selectedCategoryNames = e.detail.items.map((x) => x.name);
+  }}
+/>
 
-      {#if selectedCats.length}
-        <div class="selected-chips">
-          {#each selectedCats as c (c.id)}
-            <button
-              type="button"
-              class="chip"
-              title="Remove"
-              on:click={() => toggleCategory(c)}
-            >
-              {c.name}<span class="x">×</span>
-            </button>
-          {/each}
-        </div>
-      {/if}
-
-      {#if catsOpen}
-        <div class="dropdown-menu">
-          <div class="menu-list">
-            {#each filteredCats() as c (c.id)}
-              <label class="menu-item">
-                <input
-                  type="checkbox"
-                  checked={selectedCategoryIds.includes(c.id)}
-                  on:change={() => toggleCategory(c)}
-                />
-                <span>{c.name}</span>
-              </label>
-            {/each}
-
-            {#if filteredCats().length === 0}
-              <div class="muted">Nothing found</div>
-            {/if}
-          </div>
-        </div>
-      {/if}
-    </div>
   {/if}
 </section>
 
