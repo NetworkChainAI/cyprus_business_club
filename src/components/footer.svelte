@@ -24,7 +24,7 @@
   </div>
 
   <div class="bottom-bar">
-    <p>© 2025 Cyprus Business Club. All rights reserved.• Designed by
+    <p>© 2026 Cyprus Business Club. All rights reserved.• Designed by
       <a
         href="https://keyscalelab.com/"
         target="_blank"
