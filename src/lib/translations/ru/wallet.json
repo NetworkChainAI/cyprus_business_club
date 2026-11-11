@@ -1,0 +1,69 @@
+{
+  "title": "Кошелёк",
+  "custodial": "Кастодиальный кошелёк",
+  "connected": "Подключён",
+  "disconnected": "Отключён",
+  "balance": "Баланс",
+  "address": "Адрес",
+  "copyAddress": "Скопировать адрес",
+  "copied": "Скопировано!",
+  "actions": {
+    "deposit": "Пополнить",
+    "withdraw": "Вывести",
+    "transfer": "Перевести"
+  },
+  "deposit": {
+    "title": "Пополнение",
+    "scanQr": "Отсканируйте QR-код или скопируйте адрес ниже",
+    "network": "Сеть",
+    "address": "Ваш адрес для пополнения",
+    "copy": "Скопировать адрес"
+  },
+  "withdraw": {
+    "title": "Вывод",
+    "to": "Вывести на",
+    "address": "Адрес кошелька",
+    "addressPlaceholder": "Введите адрес кошелька",
+    "amount": "Сумма",
+    "amountPlaceholder": "Введите сумму",
+    "max": "Макс.",
+    "fee": "Комиссия сети",
+    "total": "Итого",
+    "submit": "Вывести",
+    "submitting": "Обработка..."
+  },
+  "transfer": {
+    "title": "Перевод",
+    "to": "Перевести",
+    "recipient": "Email получателя",
+    "recipientPlaceholder": "name@example.com",
+    "amount": "Сумма",
+    "amountPlaceholder": "Введите сумму",
+    "max": "Макс.",
+    "message": "Сообщение (необязательно)",
+    "messagePlaceholder": "Добавьте заметку...",
+    "submit": "Перевести",
+    "submitting": "Обработка..."
+  },
+  "secret": {
+    "show": "Показать секретную фразу",
+    "hide": "Скрыть секретную фразу",
+    "warning": "Никогда не делитесь секретной фразой!"
+  },
+  "otp": {
+    "title": "Введите код подтверждения",
+    "subtitle": "Мы отправили код на вашу почту",
+    "submit": "Подтвердить",
+    "resend": "Отправить повторно",
+    "digit": "Цифра"
+  },
+  "auth": {
+    "loginTitle": "Подключить кошелёк",
+    "loginSubtitle": "Войдите или создайте кастодиальный кошелёк",
+    "email": "Email",
+    "password": "Пароль",
+    "login": "Войти",
+    "register": "Создать кошелёк",
+    "or": "или"
+  }
+}

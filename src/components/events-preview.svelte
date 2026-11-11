@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { photoSrc } from "$lib/utils/photo";
+  import { t } from "$lib/i18n";
+  import { formatDate } from "$lib/utils/dateLocale";
 
   type Event = {
     id: string;
@@ -22,20 +25,18 @@
     (async () => {
       try {
         const res = await fetch("/api/events");
-        if (!res.ok) throw new Error("Failed to load events");
+        if (!res.ok) throw new Error(t.get('events.preview.loadError'));
         const data = await res.json();
         events = data;
       } catch (e) {
         console.error(e);
-        error = "Ошибка при загрузке событий 😔";
+        error = t.get('events.preview.loadError');
       } finally {
         loading = false;
       }
     })();
   });
 
-  // последние 3 по дате (самые ближайшие или самые новые — зависит от того, что тебе нужно)
-  // сейчас сделаю "самые новые по дате" (desc)
   $: latestEvents = [...events]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, LIMIT);
@@ -52,13 +53,13 @@
         <a href={`/events/${event.id}`} class="card">
           <div class="img-wrapper">
             <img
-              src={event.photo
-                ? `/api/photo/${event.photo.split("/").pop()}`
-                : "/assets/images/placeholder-event.jpg"}
+              src={photoSrc(event.photo, 400) || "/assets/images/placeholder-event.jpg"}
               alt={event.title}
+              loading="lazy"
+              decoding="async"
             />
             <div class="badge">
-              {event.price ? `€${event.price}` : "Free"}
+              {event.price ? `\u20AC${event.price}` : $t('events.detail.free')}
             </div>
           </div>
 
@@ -85,7 +86,7 @@
 
               <p class="date">
                 <span class="icon">📅</span>
-                {new Date(event.date).toLocaleDateString("ru-RU", {
+                {formatDate(event.date, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",

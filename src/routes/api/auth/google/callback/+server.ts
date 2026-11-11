@@ -2,6 +2,7 @@ import type { RequestEvent } from "@sveltejs/kit";
 import { getGoogleClient } from "$lib/google";
 import prisma from "$lib/prisma";
 import { SignJWT, type JWTPayload } from "jose";
+import { awardSocialCapital } from "$lib/reputation";
 
 const AUTH_JWT_SECRET = new TextEncoder().encode(
   process.env.AUTH_JWT_SECRET!
@@ -47,6 +48,7 @@ export const GET = async ({ url, cookies }: RequestEvent) => {
 
       update: {
         googleId,
+        emailVerified: true,
 
         info: {
           upsert: {
@@ -65,6 +67,7 @@ export const GET = async ({ url, cookies }: RequestEvent) => {
       create: {
         email,
         googleId,
+        emailVerified: true,
 
         info: {
           create: {
@@ -82,6 +85,7 @@ export const GET = async ({ url, cookies }: RequestEvent) => {
     const token = await signJwt({
       uid: user.id,
       email: user.email,
+      emailVerified: true,
     });
 
     cookies.set("auth_token", token, {
@@ -94,9 +98,18 @@ export const GET = async ({ url, cookies }: RequestEvent) => {
 
     cookies.delete("ref", { path: "/" });
 
+    // Reputation: referral SC (only if new user with invitedById)
+    if (googleState && user.invitedById) {
+      awardSocialCapital(user.invitedById, "REFERRAL_REGISTERED", {
+        refId: user.id,
+        refType: "REFERRAL",
+      }).catch(console.error);
+    }
+
+    const locale = cookies.get("lang") || "en";
     return new Response(null, {
       status: 302,
-      headers: { Location: "/" },
+      headers: { Location: `/${locale}/` },
     });
   } catch (err) {
     console.error("Google OAuth error:", err);

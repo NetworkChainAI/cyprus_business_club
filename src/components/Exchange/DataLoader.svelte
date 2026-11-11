@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import type { CreateQueryResult } from "@tanstack/svelte-query";
 
   /**
@@ -54,7 +55,7 @@
             fill="currentFill"
           />
         </svg>
-        <span class="sr-only">loading...</span>
+        <span class="sr-only">{$t('common.exchange.loading')}</span>
       </div>
     </div>
   </div>
@@ -67,7 +68,7 @@
         {#if data.error instanceof Error}
           {data.error.message}
         {:else}
-          error occurred
+          {$t('common.exchange.error')}
         {/if}
       </p>
     </div>
@@ -77,7 +78,7 @@
   <div class="alert variant-ghost">
     <div class="alert-message">
       <h3 class="h3 text-slate-400">{source}</h3>
-      <p class="text-slate-200">empty</p>
+      <p class="text-slate-200">{$t('common.exchange.empty')}</p>
     </div>
   </div>
 {:else}

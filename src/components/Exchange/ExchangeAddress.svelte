@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+
   export let destinationAddress: string;
   export let destinationAddressMemo: string;
   export let needTag: boolean = false;
@@ -20,7 +22,7 @@
       <label
         for="destinationAddress"
         class="absolute top-5 left-6 text-[11px] xl:text-base text-neutral-400"
-        >Address</label
+        >{$t('common.exchange.address')}</label
       >
       <input
         id="destinationAddress"
@@ -41,7 +43,7 @@
           for="memo"
           class="absolute top-5 left-6 text-[11px] xl:text-base text-neutral-400 flex items-center space-x-2"
         >
-          <div>memo</div>
+          <div>{$t('common.exchange.memo')}</div>
 
           <div
             class="w-4 h-4 bg-neutral-400 rounded-full justify-center items-center flex relative"
@@ -59,7 +61,7 @@
             {#if showMemoTip}
               <div class="absolute top-0 -translate-y-full -mt-2">
                 <div class="px-4 py-2 bg-zinc-600 bg-opacity-60 rounded-[11px]">
-                  <div class="text-white text-[13px]">If exist</div>
+                  <div class="text-white text-[13px]">{$t('common.exchange.ifExist')}</div>
                   <svg
                     class="w-3 h-auto absolute bottom-0 translate-y-full left-1/2 -translate-x-1/2 text-zinc-600 text-opacity-60 -mt-px"
                     viewBox="0 0 12 6"

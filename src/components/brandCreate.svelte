@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
+  import { t } from "$lib/i18n";
 
   type Category = { id: string; name: string };
   type TeamMember = { name: string; role: string; email: string };
@@ -117,15 +118,16 @@ function filteredTags(type: BrandTagType) {
 
   // Brand type dropdown (custom, like others)
   let brandTypeOpen = false;
-  const brandTypeOptions: { value: "PERSONAL" | "COMPANY"; label: string }[] = [
-    { value: "PERSONAL", label: "Personal brand" },
-    { value: "COMPANY", label: "Company" },
+  let brandTypeOptions: { value: "PERSONAL" | "COMPANY"; label: string }[] = [];
+  $: brandTypeOptions = [
+    { value: "PERSONAL", label: $t('partners.create.personalBrand') },
+    { value: "COMPANY", label: $t('partners.create.company') },
   ];
 
   // ✅ reactive label (NOT a function call)
-  let brandTypeText = "Company";
+  let brandTypeText = "";
   $: brandTypeText =
-    brandTypeOptions.find((o) => o.value === brandType)?.label || "Select type";
+    brandTypeOptions.find((o) => o.value === brandType)?.label || $t('partners.create.selectType');
 
   function toggleBrandTypeDropdown() {
     brandTypeOpen = !brandTypeOpen;
@@ -287,7 +289,7 @@ function filteredTags(type: BrandTagType) {
       if (!r.ok) throw new Error("Failed to load categories");
       categories = await r.json();
     } catch (e: any) {
-      errorMsg = e.message || "Error loading categories";
+      errorMsg = e.message || $t('partners.create.errorLoadingCategories');
     } finally {
       loadingCategories = false;
     }
@@ -312,7 +314,7 @@ function filteredTags(type: BrandTagType) {
         tagsByType = { ...tagsByType, [type]: data };
       }
     } catch (e: any) {
-      errorMsg = e.message || "Error loading tags";
+      errorMsg = e.message || $t('partners.create.errorLoadingTags');
     } finally {
       loadingTags = false;
     }
@@ -331,13 +333,13 @@ function filteredTags(type: BrandTagType) {
     successMsg = null;
 
     if (!name.trim()) {
-      errorMsg = "Brand name is required.";
+      errorMsg = $t('partners.create.nameRequired');
       step = 1;
       return;
     }
 
     if (selectedCategoryIds.length === 0) {
-      errorMsg = "Please select at least one category (your activity area).";
+      errorMsg = $t('partners.create.categoryRequired');
       step = 1;
       return;
     }
@@ -408,7 +410,7 @@ function filteredTags(type: BrandTagType) {
       const data = await safeJson(r);
       if (!r.ok) throw new Error(data?.error || "Failed to create brand");
 
-      successMsg = "Brand created and sent for moderation.";
+      successMsg = $t('partners.create.brandCreated');
 
       // reset
       name = "";
@@ -446,7 +448,7 @@ function filteredTags(type: BrandTagType) {
       step = 1;
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
-      errorMsg = e.message || "Brand creation error";
+      errorMsg = e.message || $t('partners.create.brandError');
     } finally {
       submitting = false;
     }
@@ -470,12 +472,12 @@ $: selectedLabel = {
 </script>
 
 <div class="wrap">
-  <h1>Create brand</h1>
+  <h1>{$t('partners.create.title')}</h1>
 
   <div class="steps-indicator">
-    <span class:active={step === 1} on:click={() => (step = 1)}>1. Brand</span>
-    <span class:active={step === 2} on:click={() => (step = 2)}>2. Clients & business</span>
-    <span class:active={step === 3} on:click={() => (step = 3)}>3. Team</span>
+    <span class:active={step === 1} on:click={() => (step = 1)}>1. {$t('partners.create.stepBrand')}</span>
+    <span class:active={step === 2} on:click={() => (step = 2)}>2. {$t('partners.create.stepBusiness')}</span>
+    <span class:active={step === 3} on:click={() => (step = 3)}>3. {$t('partners.create.stepTeam')}</span>
   </div>
 
   {#if errorMsg}
@@ -487,15 +489,15 @@ $: selectedLabel = {
 
   {#if step === 1}
     <section class="card">
-      <h2>Basics</h2>
+      <h2>{$t('partners.create.basics')}</h2>
 
       <label>
-        Brand name *
-        <input bind:value={name} placeholder="Brand name" />
+        {$t('partners.create.brandName')} *
+        <input bind:value={name} placeholder={$t('partners.create.brandName')} />
       </label>
 
       <label>
-        Brand type *
+        {$t('partners.create.brandType')} *
         <div class="dropdown">
           <button type="button" class="dropdown-btn" on:click={toggleBrandTypeDropdown}>
             {brandTypeText}
@@ -522,7 +524,7 @@ $: selectedLabel = {
       </label>
 
       <label>
-        Logo (file)
+        {$t('partners.create.logo')}
         <input type="file" accept="image/*" on:change={onLogoChange} />
       </label>
 
@@ -533,23 +535,23 @@ $: selectedLabel = {
       {/if}
 
       <label>
-        Website (URL)
+        {$t('partners.create.website')}
         <input bind:value={website} placeholder="https://..." />
       </label>
     </section>
 
     <section class="card">
-      <h2>Categories / activity area *</h2>
+      <h2>{$t('partners.create.categoriesTitle')} *</h2>
 
       {#if loadingCategories}
-        <div class="muted">Loading categories...</div>
+        <div class="muted">{$t('partners.create.loadingCategories')}</div>
       {:else}
         <div class="dropdown">
           <button type="button" class="dropdown-btn" on:click={() => (catsOpen = !catsOpen)}>
             {#if selectedCategoryNames.length}
               {selectedCategoryNames.join(", ")}
             {:else}
-              Select categories
+              {$t('partners.create.selectCategories')}
             {/if}
             <span class="chev">{catsOpen ? "▲" : "▼"}</span>
           </button>
@@ -558,7 +560,7 @@ $: selectedLabel = {
             <div class="dropdown-menu">
               <input
                 class="search"
-                placeholder="Search category..."
+                placeholder={$t('partners.create.searchCategory')}
                 value={catsSearch}
                 on:input={(e) => setCatsSearch((e.currentTarget as HTMLInputElement).value)}
               />
@@ -576,7 +578,7 @@ $: selectedLabel = {
                 {/each}
 
                 {#if filteredCats().length === 0}
-                  <div class="muted">Nothing found</div>
+                  <div class="muted">{$t('partners.create.nothingFound')}</div>
                 {/if}
               </div>
             </div>
@@ -586,45 +588,45 @@ $: selectedLabel = {
     </section>
 
     <section class="card">
-      <h2>Socials & contacts (optional)</h2>
+      <h2>{$t('partners.create.socialsTitle')}</h2>
       <label>Instagram <input bind:value={instagram} placeholder="https://instagram.com/..." /></label>
       <label>Telegram <input bind:value={telegram} placeholder="https://t.me/..." /></label>
       <label>TikTok <input bind:value={tiktok} placeholder="https://tiktok.com/..." /></label>
       <label>YouTube <input bind:value={youtube} placeholder="https://youtube.com/..." /></label>
       <label>LinkedIn <input bind:value={linkedin} placeholder="https://linkedin.com/..." /></label>
-      <label>Email <input bind:value={contactEmail} placeholder="hello@brand.com" /></label>
-      <label>Phone <input bind:value={phone} placeholder="+357..." /></label>
+      <label>{$t('partners.create.email')} <input bind:value={contactEmail} placeholder="hello@brand.com" /></label>
+      <label>{$t('partners.create.phone')} <input bind:value={phone} placeholder="+357..." /></label>
     </section>
 
   {:else if step === 2}
     <section class="card">
-      <h2>About</h2>
+      <h2>{$t('partners.create.about')}</h2>
 
       <label>
-        What does the brand do?
-        <textarea bind:value={description} rows="3" placeholder="Short description..." />
+        {$t('partners.create.whatDoes')}
+        <textarea bind:value={description} rows="3" placeholder={$t('partners.create.shortDescription')} />
       </label>
 
-      <h3>Products / services</h3>
+      <h3>{$t('partners.create.products')}</h3>
       <div class="dynamic">
         {#each products as p, i}
           <div class="row-field">
-            <input bind:value={products[i]} placeholder="e.g. AI assistant" />
+            <input bind:value={products[i]} placeholder={$t('partners.create.productPlaceholder')} />
             {#if products.length > 1}
               <button type="button" class="remove" on:click={() => removeProductField(i)}>🗑</button>
             {/if}
           </div>
         {/each}
-        <button type="button" class="add" on:click={addProductField}>+ Add</button>
+        <button type="button" class="add" on:click={addProductField}>+ {$t('partners.create.add')}</button>
       </div>
     </section>
 
     <section class="card">
-      <h2>Target audience</h2>
+      <h2>{$t('partners.create.targetAudience')}</h2>
 
       <div class="row">
         <div>
-          Audience gender
+          {$t('partners.create.audienceGender')}
           <div class="chips">
             {#each ["male", "female", "all"] as g}
               <button type="button" class:active={gender.includes(g)} on:click={() => toggleGender(g)}>
@@ -636,10 +638,10 @@ $: selectedLabel = {
 
         <div class="age">
           <div class="age-header">
-            <span>Age</span>
+            <span>{$t('partners.create.age')}</span>
             <label class="age-any">
               <input type="checkbox" bind:checked={ageAny} />
-              <span>Any age</span>
+              <span>{$t('partners.create.anyAge')}</span>
             </label>
           </div>
 
@@ -649,54 +651,54 @@ $: selectedLabel = {
               <input type="number" bind:value={ageTo} placeholder="to" />
             </div>
           {:else}
-            <div class="muted small">Any age range is OK</div>
+            <div class="muted small">{$t('partners.create.anyAgeOk')}</div>
           {/if}
         </div>
       </div>
 
-      <h3>Geography</h3>
+      <h3>{$t('partners.create.geography')}</h3>
       <div class="dynamic">
         {#each geo as g, i}
           <div class="row-field">
-            <input bind:value={geo[i]} placeholder="e.g. Cyprus" />
+            <input bind:value={geo[i]} placeholder={$t('partners.create.geoPlaceholder')} />
             {#if geo.length > 1}
               <button type="button" class="remove" on:click={() => removeGeoField(i)}>🗑</button>
             {/if}
           </div>
         {/each}
-        <button type="button" class="add" on:click={addGeoField}>+ Add</button>
+        <button type="button" class="add" on:click={addGeoField}>+ {$t('partners.create.add')}</button>
       </div>
 
-      <h3>Interests</h3>
+      <h3>{$t('partners.create.interests')}</h3>
       <div class="dynamic">
         {#each interests as g, i}
           <div class="row-field">
-            <input bind:value={interests[i]} placeholder="e.g. fintech" />
+            <input bind:value={interests[i]} placeholder={$t('partners.create.interestPlaceholder')} />
             {#if interests.length > 1}
               <button type="button" class="remove" on:click={() => removeInterestField(i)}>🗑</button>
             {/if}
           </div>
         {/each}
-        <button type="button" class="add" on:click={addInterestField}>+ Add</button>
+        <button type="button" class="add" on:click={addInterestField}>+ {$t('partners.create.add')}</button>
       </div>
 
-      <h3>Audience segments (from database)</h3>
+      <h3>{$t('partners.create.audienceSegments')}</h3>
       {#if loadingTags}
-        <div class="muted">Loading suggestions...</div>
+        <div class="muted">{$t('partners.create.loadingSuggestions')}</div>
       {:else}
         <div class="dropdown">
           <button type="button" class="dropdown-btn" on:click={() => openTagDropdown("AUDIENCE")}>
             {#if selectedTagTitles.AUDIENCE.length}
               {selectedTagTitles.AUDIENCE.join(", ")}
             {:else}
-              Select segments
+              {$t('partners.create.selectSegments')}
             {/if}
             <span class="chev">{tagOpen.AUDIENCE ? "▲" : "▼"}</span>
           </button>
 
           {#if tagOpen.AUDIENCE}
             <div class="dropdown-menu">
-         <input class="search" placeholder="Search..." bind:value={audienceSearch} />
+         <input class="search" placeholder={$t('common.filter.search')} bind:value={audienceSearch} />
 
 
               <div class="menu-list">
@@ -712,7 +714,7 @@ $: selectedLabel = {
                 {/each}
 
                 {#if filteredTags("AUDIENCE").length === 0}
-                  <div class="muted">Nothing found</div>
+                  <div class="muted">{$t('partners.create.nothingFound')}</div>
                 {/if}
               </div>
             </div>
@@ -722,22 +724,22 @@ $: selectedLabel = {
     </section>
 
     <section class="card">
-      <h2>Problems / solutions / clients / monetization</h2>
+      <h2>{$t('partners.create.problemsTitle')}</h2>
 
-      <h3>Problems (pains)</h3>
+      <h3>{$t('partners.create.problems')}</h3>
       <div class="dropdown">
         <button type="button" class="dropdown-btn" on:click={() => openTagDropdown("PAIN")}>
           {#if selectedTagTitles.PAIN.length}
             {selectedTagTitles.PAIN.join(", ")}
           {:else}
-            Select problems
+            {$t('partners.create.selectProblems')}
           {/if}
           <span class="chev">{tagOpen.PAIN ? "▲" : "▼"}</span>
         </button>
 
         {#if tagOpen.PAIN}
           <div class="dropdown-menu">
-        <input class="search" placeholder="Search..." bind:value={painSearch} />
+        <input class="search" placeholder={$t('common.filter.search')} bind:value={painSearch} />
 
             <div class="menu-list">
               {#each filteredTags("PAIN") as t}
@@ -751,27 +753,27 @@ $: selectedLabel = {
                 </label>
               {/each}
               {#if filteredTags("PAIN").length === 0}
-                <div class="muted">Nothing found</div>
+                <div class="muted">{$t('partners.create.nothingFound')}</div>
               {/if}
             </div>
           </div>
         {/if}
       </div>
 
-      <h3>Solutions</h3>
+      <h3>{$t('partners.create.solutions')}</h3>
       <div class="dropdown">
         <button type="button" class="dropdown-btn" on:click={() => openTagDropdown("SOLUTION")}>
           {#if selectedTagTitles.SOLUTION.length}
             {selectedTagTitles.SOLUTION.join(", ")}
           {:else}
-            Select solutions
+            {$t('partners.create.selectSolutions')}
           {/if}
           <span class="chev">{tagOpen.SOLUTION ? "▲" : "▼"}</span>
         </button>
 
         {#if tagOpen.SOLUTION}
           <div class="dropdown-menu">
-      <input class="search" placeholder="Search..." bind:value={solutionSearch} />
+      <input class="search" placeholder={$t('common.filter.search')} bind:value={solutionSearch} />
 
             <div class="menu-list">
               {#each filteredTags("SOLUTION") as t}
@@ -785,27 +787,27 @@ $: selectedLabel = {
                 </label>
               {/each}
               {#if filteredTags("SOLUTION").length === 0}
-                <div class="muted">Nothing found</div>
+                <div class="muted">{$t('partners.create.nothingFound')}</div>
               {/if}
             </div>
           </div>
         {/if}
       </div>
 
-      <h3>Potential clients</h3>
+      <h3>{$t('partners.create.potentialClients')}</h3>
       <div class="dropdown">
         <button type="button" class="dropdown-btn" on:click={() => openTagDropdown("CLIENT")}>
           {#if selectedTagTitles.CLIENT.length}
             {selectedTagTitles.CLIENT.join(", ")}
           {:else}
-            Select clients
+            {$t('partners.create.selectClients')}
           {/if}
           <span class="chev">{tagOpen.CLIENT ? "▲" : "▼"}</span>
         </button>
 
         {#if tagOpen.CLIENT}
           <div class="dropdown-menu">
-       <input class="search" placeholder="Search..." bind:value={clientSearch} />
+       <input class="search" placeholder={$t('common.filter.search')} bind:value={clientSearch} />
 
             <div class="menu-list">
               {#each filteredTags("CLIENT") as t}
@@ -819,27 +821,27 @@ $: selectedLabel = {
                 </label>
               {/each}
               {#if filteredTags("CLIENT").length === 0}
-                <div class="muted">Nothing found</div>
+                <div class="muted">{$t('partners.create.nothingFound')}</div>
               {/if}
             </div>
           </div>
         {/if}
       </div>
 
-      <h3>Monetization</h3>
+      <h3>{$t('partners.create.monetization')}</h3>
       <div class="dropdown">
         <button type="button" class="dropdown-btn" on:click={() => openTagDropdown("MONETIZATION")}>
           {#if selectedTagTitles.MONETIZATION.length}
             {selectedTagTitles.MONETIZATION.join(", ")}
           {:else}
-            Select monetization
+            {$t('partners.create.selectMonetization')}
           {/if}
           <span class="chev">{tagOpen.MONETIZATION ? "▲" : "▼"}</span>
         </button>
 
         {#if tagOpen.MONETIZATION}
           <div class="dropdown-menu">
-          <input class="search" placeholder="Search..." bind:value={monetizationSearch} />
+          <input class="search" placeholder={$t('common.filter.search')} bind:value={monetizationSearch} />
 
             <div class="menu-list">
               {#each filteredTags("MONETIZATION") as t}
@@ -853,7 +855,7 @@ $: selectedLabel = {
                 </label>
               {/each}
               {#if filteredTags("MONETIZATION").length === 0}
-                <div class="muted">Nothing found</div>
+                <div class="muted">{$t('partners.create.nothingFound')}</div>
               {/if}
             </div>
           </div>
@@ -863,35 +865,35 @@ $: selectedLabel = {
 
   {:else}
     <section class="card">
-      <h2>Team</h2>
+      <h2>{$t('partners.create.team')}</h2>
 
       {#if team.length === 0}
-        <div class="muted">No members added yet</div>
+        <div class="muted">{$t('partners.create.noMembers')}</div>
       {/if}
 
       {#each team as m, i}
         <div class="team-row">
-          <input bind:value={m.name} placeholder="Name" />
-          <input bind:value={m.role} placeholder="Role" />
-          <input bind:value={m.email} placeholder="Email" />
-          <button type="button" class="danger" on:click={() => removeTeamMember(i)}>Remove</button>
+          <input bind:value={m.name} placeholder={$t('partners.create.memberName')} />
+          <input bind:value={m.role} placeholder={$t('partners.create.memberRole')} />
+          <input bind:value={m.email} placeholder={$t('partners.create.memberEmail')} />
+          <button type="button" class="danger" on:click={() => removeTeamMember(i)}>{$t('partners.create.remove')}</button>
         </div>
       {/each}
 
-      <button type="button" on:click={addTeamMember}>+ Add member</button>
+      <button type="button" on:click={addTeamMember}>+ {$t('partners.create.addMember')}</button>
     </section>
   {/if}
 
   <div class="actions">
     {#if step > 1}
-      <button type="button" class="secondary" on:click={prevStep}>Back</button>
+      <button type="button" class="secondary" on:click={prevStep}>{$t('partners.create.back')}</button>
     {/if}
 
     {#if step < 3}
-      <button type="button" on:click={nextStep}>Next</button>
+      <button type="button" on:click={nextStep}>{$t('partners.create.next')}</button>
     {:else}
       <button type="button" disabled={submitting} on:click={submit}>
-        {submitting ? "Creating..." : "Create brand"}
+        {submitting ? $t('partners.create.creating') : $t('partners.create.createBrand')}
       </button>
     {/if}
   </div>

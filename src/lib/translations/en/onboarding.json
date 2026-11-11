@@ -1,0 +1,19 @@
+{
+  "step1Title": "What are your interests?",
+  "step1Subtitle": "Choose topics that matter to you — we'll use them to personalize your experience.",
+  "step2Title": "Tell us a bit about yourself",
+  "step2Subtitle": "This will be visible on your public profile. You can update it anytime.",
+  "stepOf": "Step {current} of {total}",
+  "next": "Next",
+  "back": "Back",
+  "skip": "Skip",
+  "finish": "Finish",
+  "optional": "optional",
+  "photoLabel": "Profile photo",
+  "photoHint": "Click or drag to upload",
+  "bioLabel": "Short bio",
+  "bioPlaceholder": "A few words about yourself…",
+  "locationLabel": "City",
+  "locationPlaceholder": "Where are you based?",
+  "saving": "Saving…"
+}

@@ -1,8 +1,45 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
+import { verifyJwt } from '$lib/jwt';
 
-// GET — получить всех пользователей
-export const GET: RequestHandler = async () => {
+/** Require ADMIN role — returns error Response or null if authorized */
+async function requireAdmin(cookies: any): Promise<Response | null> {
+  const token = cookies.get('auth_token');
+  if (!token) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const payload = await verifyJwt(token);
+  if (!payload?.uid) {
+    return new Response(JSON.stringify({ error: 'Invalid token' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const userInfo = await prisma.cbcUserInfo.findFirst({
+    where: { user: { id: payload.uid } },
+    select: { role: true },
+  });
+
+  if (userInfo?.role !== 'ADMIN') {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  return null;
+}
+
+// GET — получить всех пользователей (ADMIN only)
+export const GET: RequestHandler = async ({ cookies }) => {
+  const authError = await requireAdmin(cookies);
+  if (authError) return authError;
+
   try {
     const users = await prisma.cbcUser.findMany({
       orderBy: { createdAt: 'desc' },
@@ -24,14 +61,25 @@ export const GET: RequestHandler = async () => {
   }
 };
 
-// POST — изменить статус пользователя
-export const POST: RequestHandler = async ({ request }) => {
+// POST — изменить статус пользователя (ADMIN only)
+export const POST: RequestHandler = async ({ request, cookies }) => {
+  const authError = await requireAdmin(cookies);
+  if (authError) return authError;
+
   try {
     const { userId, status } = await request.json();
 
     if (!userId || !status) {
       return new Response(
         JSON.stringify({ error: 'userId and status are required' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const validStatuses = ['Member', 'Partner', 'Resident', 'Admin'];
+    if (!validStatuses.includes(status)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid status' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }

@@ -1,27 +1,26 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+  import { getDateLocale } from "$lib/utils/dateLocale";
+
   export let availability: any[] = [];
   export let member: any = null;
 
   export let onClose: () => void;
-  // опционально — можно что-то сделать после успешного создания встречи
   export let onBooked: (meeting: any) => void = () => {};
 
   let loading = false;
-  let step = 1; // 1 = выбор интервала, 2 = выбор начала, 3 = выбор конца
+  let step = 1;
   let selectedSlot: any = null;
   let selectedStart: Date | null = null;
   let selectedEnd: Date | null = null;
   let errorMsg = "";
 
-  const weekday = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const month = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
   function formatDate(d: Date) {
-    return `${weekday[d.getDay()]}, ${d.getDate()} ${month[d.getMonth()]} ${d.getFullYear()}`;
+    return d.toLocaleDateString(getDateLocale(), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   }
 
   function formatTime(d: Date) {
-    return d.toLocaleTimeString("ru-RU", {
+    return d.toLocaleTimeString(getDateLocale(), {
       hour: "2-digit",
       minute: "2-digit"
     });
@@ -84,7 +83,7 @@
 
       if (!res.ok) {
         const txt = await res.text();
-        errorMsg = txt || "Error creating meeting";
+        errorMsg = txt || t.get('common.booking.error');
         return;
       }
 
@@ -93,7 +92,7 @@
       onClose();
     } catch (err) {
       console.error("Booking error:", err);
-      errorMsg = "Unexpected error";
+      errorMsg = t.get('common.booking.unexpectedError');
     } finally {
       loading = false;
     }
@@ -105,7 +104,7 @@
 
   <div class="modal-container">
     <h3 class="modal-title">
-      Book meeting with {member?.info?.name}
+      {$t('common.booking.title')} {member?.info?.name}
     </h3>
 
     {#if errorMsg}
@@ -115,7 +114,7 @@
     {#if step === 1}
       <!-- Шаг 1: выбор окна Availability -->
       {#if availability.length === 0}
-        <p>No availability.</p>
+        <p>{$t('common.booking.noAvailability')}</p>
       {:else}
         {#each availability as slot}
           <div class="slot-item">
@@ -124,7 +123,7 @@
               {formatTime(new Date(slot.start))} — {formatTime(new Date(slot.end))}
             </div>
             <button class="slot-btn" on:click={() => openStartSelector(slot)}>
-              Select
+              {$t('common.booking.select')}
             </button>
           </div>
         {/each}
@@ -137,7 +136,7 @@
         {formatDate(new Date(selectedSlot.start))}
       </p>
       <p class="step-sub">
-        Choose start time:
+        {$t('common.booking.chooseStart')}:
       </p>
 
       <div class="times-grid">
@@ -153,7 +152,7 @@
       </div>
 
       <button class="back-btn" on:click={() => (step = 1)}>
-        ← Back
+        ← {$t('common.btn.back')}
       </button>
     {/if}
 
@@ -163,8 +162,8 @@
         {formatDate(new Date(selectedSlot.start))}
       </p>
       <p class="step-sub">
-        Start: {selectedStart && formatTime(selectedStart)}<br />
-        Choose end time:
+        {$t('common.booking.start')}: {selectedStart && formatTime(selectedStart)}<br />
+        {$t('common.booking.chooseEnd')}:
       </p>
 
       <div class="times-grid">
@@ -182,20 +181,20 @@
 
       <div class="modal-actions">
         <button class="back-btn" on:click={() => (step = 2)} disabled={loading}>
-          ← Back
+          ← {$t('common.btn.back')}
         </button>
         <button
           class="primary-btn"
           on:click={confirmBooking}
           disabled={loading || !selectedEnd}
         >
-          {loading ? "Booking..." : "Confirm"}
+          {loading ? $t('common.booking.booking') : $t('common.btn.confirm')}
         </button>
       </div>
     {/if}
 
     <button class="close-btn" on:click={onClose}>
-      Close
+      {$t('common.btn.close')}
     </button>
   </div>
 </div>

@@ -1,0 +1,135 @@
+{
+  "tabs": {
+    "about": "О себе",
+    "interests": "Интересы",
+    "companies": "Компании",
+    "events": "События",
+    "followers": "Подписчики",
+    "following": "Подписки",
+    "tickets": "Билеты",
+    "meetings": "Встречи",
+    "achievements": "Достижения",
+    "settings": "Настройки",
+    "notifications": "Уведомления"
+  },
+  "header": {
+    "editProfile": "Редактировать профиль",
+    "socialCapital": "Социальный капитал",
+    "rank": "Ранг",
+    "trustScore": "Уровень доверия",
+    "defaultUser": "Пользователь",
+    "defaultStatus": "Участник",
+    "defaultLocation": "Удалённо",
+    "joined": "Присоединился",
+    "followers": "подписчиков",
+    "following": "Подписки",
+    "online": "В сети",
+    "lastSeenRecently": "Был недавно",
+    "lastSeen": "Был",
+    "minutesAgo": "мин. назад",
+    "hoursAgo": "ч. назад",
+    "daysAgo": "дн. назад"
+  },
+  "about": {
+    "title": "О себе",
+    "bio": "Био",
+    "noBio": "Информация о себе не заполнена.",
+    "location": "Местоположение",
+    "email": "Email",
+    "joined": "Присоединился",
+    "privacy": "Конфиденциальность",
+    "privateProfile": "Закрытый профиль",
+    "publicProfile": "Открытый профиль",
+    "emailNotifications": "Email-уведомления",
+    "chatBotNotifications": "Уведомления чат-бота",
+    "enabled": "Включены",
+    "disabled": "Отключены"
+  },
+  "sidebar": {
+    "socialCapital": "Социальный капитал",
+    "pts": "баллов",
+    "nextRank": "Следующий ранг",
+    "howItWorks": "Как это работает",
+    "trustScore": "Уровень доверия",
+    "highlyTrusted": "Высокое доверие",
+    "trusted": "Доверенный",
+    "verified": "Подтверждённый",
+    "newMember": "Новый участник",
+    "basedOnActivity": "На основе подтверждённой активности",
+    "socialProof": "СОЦИАЛЬНОЕ ПОДТВЕРЖДЕНИЕ",
+    "achievements": "Достижения"
+  },
+  "achievements": {
+    "progress": "Прогресс",
+    "completed": "выполнено",
+    "filterAll": "Все",
+    "filterOneOff": "Разовые",
+    "filterProgress": "Прогресс",
+    "filterSeasonal": "Сезонные",
+    "completeToEarn": "Выполняйте задания, чтобы получать достижения"
+  },
+  "achievementDetail": {
+    "notFound": "Достижение не найдено",
+    "backToAchievements": "Назад к достижениям",
+    "earned": "Получено",
+    "owners": "Владельцев",
+    "rarity": "Редкость",
+    "yourLevel": "Ваш уровень",
+    "communityRarity": "Редкость в сообществе",
+    "rarityDesc": "участников получили это достижение",
+    "levels": "Уровни",
+    "target": "Цель",
+    "starterLevel": "Начальный уровень",
+    "nextMilestone": "Следующая цель",
+    "yourProgress": "Ваш прогресс",
+    "levelEarned": "Получен уровень:",
+    "notEarnedYet": "Вы ещё не получили это достижение",
+    "completeToUnlock": "Выполните необходимое задание, чтобы разблокировать"
+  },
+  "events": {
+    "upcoming": "Предстоящие",
+    "visited": "Посещённые",
+    "createdByYou": "Созданные вами",
+    "organizer": "Организатор",
+    "attended": "Посещено",
+    "free": "Бесплатно",
+    "browseEvents": "Обзор событий",
+    "registerOrCreate": "Регистрируйтесь на события или создайте своё",
+    "openEventChat": "Открыть чат события"
+  },
+  "tickets": {
+    "registerToSee": "Регистрируйтесь на события, чтобы увидеть билеты",
+    "pastEvents": "Прошедшие события"
+  },
+  "following": {
+    "browseMembers": "Обзор участников",
+    "unfollow": "Отписаться"
+  },
+  "interests": {
+    "hint": "Нажмите, чтобы выбрать или убрать интересы",
+    "noCategories": "Категории недоступны."
+  },
+  "meetings": {
+    "noMeetings": "Запланированных встреч нет."
+  },
+  "settings": {
+    "title": "Настройки",
+    "privacy": "Конфиденциальность",
+    "profilePrivate": "Закрытый профиль",
+    "emailNotifications": "Email-уведомления",
+    "chatBotNotifications": "Уведомления чат-бота",
+    "save": "Сохранить настройки",
+    "saving": "Сохраняем...",
+    "saved": "Настройки сохранены!"
+  },
+  "empty": {
+    "noTickets": "Билетов пока нет",
+    "noMeetings": "Встреч пока нет",
+    "noEvents": "Событий пока нет",
+    "noFollowers": "Подписчиков пока нет",
+    "noFollowing": "Пока ни на кого не подписан",
+    "noInterests": "Интересов пока нет",
+    "noCompanies": "Компаний пока нет",
+    "noAchievements": "Достижений пока нет"
+  }
+}

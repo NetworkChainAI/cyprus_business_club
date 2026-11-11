@@ -1,605 +1,964 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  
-  type Event = {
-    id: string;
-    title: string;
-    description?: string;
-    categories?: { name: string }[];
-    date: string;
-    location: string;
-    price?: number | null;
-    photo?: string | null;
+  import { onMount, onDestroy } from "svelte";
+  import { photoSrc } from "$lib/utils/photo";
+  import { t } from "$lib/i18n";
+  import { getDateLocale } from "$lib/utils/dateLocale";
+  import { withLang } from "$lib/utils/withLang";
+  import { pageHasAssistant } from "$lib/stores/assistant";
+  import ContextAssistant from "./ContextAssistant.svelte";
+
+  onMount(() => pageHasAssistant.set(true));
+  onDestroy(() => pageHasAssistant.set(false));
+
+  export let data: {
+    categories: Array<{ id: string; name: string }>;
+    events: Array<{
+      id: string;
+      title: string;
+      description: string;
+      date: string | Date;
+      location: string;
+      price: number | null;
+      photo: string | null;
+      categories: Array<{ id: string; name: string }>;
+      community: { id: string; name: string; logoUrl: string | null } | null;
+      brand: { id: string; name: string; logoUrl: string | null; type: string } | null;
+      goingCount: number;
+      isRegistered: boolean;
+    }>;
+    userId: string | null;
+    isOwner: boolean;
   };
 
-  type Category = {
-    id: string;
-    name: string;
-  };
+  let query = "";
+  let sort: "soonest" | "latest" = "latest";
 
-  let categories: Category[] = [];
-  let selectedCategory: string = "All";
-  let sortOption: "name" | "date" = "name";
-  let events: Event[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let activeCategory: string = "All";
+  let dateFilter: "all" | "today" | "week" = "all";
+  let priceFilter: "all" | "free" | "paid" = "all";
 
-  // --- Categories UI (Top chips + More popover) ---
-  const TOP_CATS = 12;
-  let moreOpen = false;
-  let catQuery = "";
+  let categoriesOpen = false;
+  const CATS_LIMIT = 10;
 
-  function toggleMore(e: MouseEvent) {
-    e.stopPropagation();
-    moreOpen = !moreOpen;
-    if (moreOpen) catQuery = "";
+  $: allCategoryNames = data.categories.map((c) => c.name);
+  $: visibleCats = categoriesOpen
+    ? allCategoryNames
+    : allCategoryNames.slice(0, CATS_LIMIT);
+
+  function isToday(d: Date) {
+    const now = new Date();
+    return (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    );
   }
 
-  function selectCategory(name: string) {
-    selectedCategory = name;
-    moreOpen = false;
+  function isThisWeek(d: Date) {
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const day = (start.getDay() + 6) % 7;
+    start.setDate(start.getDate() - day);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    return d >= start && d < end;
   }
 
-  $: topCategories = categories.slice(0, TOP_CATS);
-  $: activeIsInTop = topCategories.some((c) => c.name === selectedCategory);
-  $: chipsCategories = activeIsInTop
-    ? topCategories
-    : [
-        ...topCategories,
-        ...(categories.find((c) => c.name === selectedCategory)
-          ? [categories.find((c) => c.name === selectedCategory)!]
-          : []),
-      ];
+  function formatDay(dateValue: string | Date) {
+    return new Date(dateValue).getDate().toString();
+  }
 
-  $: filteredCategoryList = categories.filter((c) =>
-    c.name.toLowerCase().includes(catQuery.trim().toLowerCase())
-  );
+  function formatMonth(dateValue: string | Date) {
+    return new Date(dateValue)
+      .toLocaleString(getDateLocale(), { month: "short" })
+      .toUpperCase();
+  }
 
-  onMount(() => {
-    const onDocClick = () => (moreOpen = false);
-    document.addEventListener("click", onDocClick);
+  function formatFullDate(dateValue: string | Date) {
+    return new Date(dateValue).toLocaleDateString(getDateLocale(), {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
 
-    (async () => {
-      try {
-        const catRes = await fetch("/api/categories");
-        if (!catRes.ok) throw new Error("Failed to load categories");
-        const catData = await catRes.json();
-        categories = [{ id: "all", name: "All" }, ...catData];
+  function priceBadge(e: any) {
+    if (e.price === null || e.price === undefined || e.price === 0)
+      return t.get('events.filter.free');
+    const n = Number(e.price);
+    if (Number.isFinite(n))
+      return `€${n % 1 === 0 ? n.toFixed(0) : n.toFixed(2)}`;
+    return t.get('events.filter.paid');
+  }
 
-        const eventRes = await fetch("/api/events");
-        if (!eventRes.ok) throw new Error("Failed to load events");
-        const eventData = await eventRes.json();
-        events = eventData;
-      } catch (err) {
-        console.error(err);
-        error = "Ошибка при загрузке данных 😔";
-      } finally {
-        loading = false;
-      }
-    })();
+  function isFreeEvent(e: any) {
+    return e.price === null || e.price === undefined || e.price === 0;
+  }
 
-    return () => {
-      document.removeEventListener("click", onDocClick);
-    };
-  });
+  function clearFilters() {
+    query = "";
+    activeCategory = "All";
+    dateFilter = "all";
+    priceFilter = "all";
+  }
 
-  $: filteredEvents = events
+  $: filtered = data.events
     .filter((e) => {
-      if (selectedCategory === "All" || selectedCategory === "all") return true;
-      return e.categories?.some((c) => c.name === selectedCategory);
+      const name = (e.title ?? "").toLowerCase();
+      const location = (e.location ?? "").toLowerCase();
+      const q = query.trim().toLowerCase();
+      if (q && !(name.includes(q) || location.includes(q))) return false;
+
+      if (activeCategory !== "All") {
+        const cats = (e.categories ?? []).map((c: any) => c.name);
+        if (!cats.includes(activeCategory)) return false;
+      }
+
+      const d = new Date(e.date);
+      if (dateFilter === "today" && !isToday(d)) return false;
+      if (dateFilter === "week" && !isThisWeek(d)) return false;
+
+      if (priceFilter === "free" && !isFreeEvent(e)) return false;
+      if (priceFilter === "paid" && isFreeEvent(e)) return false;
+
+      return true;
     })
     .sort((a, b) => {
-      if (sortOption === "name") return a.title.localeCompare(b.title);
-      if (sortOption === "date")
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (sort === "soonest") return +new Date(a.date) - +new Date(b.date);
+      if (sort === "latest") return +new Date((b as any).createdAt ?? b.date) - +new Date((a as any).createdAt ?? a.date);
       return 0;
     });
+
+  $: hasActiveFilters =
+    activeCategory !== "All" ||
+    dateFilter !== "all" ||
+    priceFilter !== "all" ||
+    query.trim().length > 0;
 </script>
 
-<h1>All Events</h1>
-
-<div class="top-bar">
-  <div class="categories" on:click|stopPropagation>
-    {#each chipsCategories as category (category.id)}
-      <button
-        type="button"
-        class="category {selectedCategory === category.name ? 'active' : ''}"
-        on:click={() => selectCategory(category.name)}
-        title={category.name}
-      >
-        {category.name}
-      </button>
-    {/each}
-
-    <button type="button" class="category more" on:click={toggleMore}>
-      More ▾
-    </button>
-
-    {#if moreOpen}
-      <div class="cat-popover">
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>
+        <iconify-icon icon="lucide:calendar-days" width="28" height="28"></iconify-icon>
+        {$t('events.title')}
+      </h1>
+      <p class="header-sub">{$t('events.subtitle')}</p>
+    </div>
+    <div class="header-right">
+      <div class="search-box">
+        <iconify-icon icon="lucide:search" width="16" height="16"></iconify-icon>
         <input
-          class="cat-search"
-          placeholder="Search category…"
-          bind:value={catQuery}
+          bind:value={query}
+          placeholder={$t('events.search')}
+          aria-label={$t('events.search')}
         />
-
-        <div class="cat-list">
-          {#each filteredCategoryList as c (c.id)}
-            <button
-              type="button"
-              class="cat-item {selectedCategory === c.name ? 'active' : ''}"
-              on:click={() => selectCategory(c.name)}
-            >
-              <span class="cat-name">{c.name}</span>
-              {#if selectedCategory === c.name}
-                <span class="cat-check">✓</span>
-              {/if}
-            </button>
-          {/each}
-
-          {#if filteredCategoryList.length === 0}
-            <div class="cat-empty">No results</div>
-          {/if}
-        </div>
-      </div>
-    {/if}
-  </div>
-
-  <div class="controls">
-    <span class="label">Sort:</span>
-
-    <div class="segmented" role="tablist" aria-label="Sort events">
-      <button
-        type="button"
-        class="seg-btn {sortOption === 'name' ? 'active' : ''}"
-        on:click={() => (sortOption = "name")}
-      >
-        Name
-      </button>
-
-      <button
-        type="button"
-        class="seg-btn {sortOption === 'date' ? 'active' : ''}"
-        on:click={() => (sortOption = "date")}
-      >
-        Date
-      </button>
-    </div>
-  </div>
-</div>
-
-{#if loading}
-  <p class="loading"></p>
-{:else if error}
-  <p class="error">{error}</p>
-{:else}
-  <div class="grid">
-    {#each filteredEvents as event (event.id)}
-      <a href={`/events/${event.id}`} class="card">
-  <div class="img-wrapper">
-    <img
-      src={event.photo
-        ? `/api/photo/${event.photo.split("/").pop()}`
-        : "/assets/images/placeholder-event.jpg"}
-      alt={event.title}
-    />
-
-    <div class="img-overlay"></div>
-
-    <div class="top-badges">
-      <span class="price-badge">
-        {event.price ? `€${event.price}` : "Free"}
-      </span>
-    </div>
-
-    <div class="date-pill">
-      <span class="day">
-        {new Date(event.date).getDate()}
-      </span>
-      <span class="month">
-        {new Date(event.date).toLocaleString("en", { month: "short" })}
-      </span>
-    </div>
-  </div>
-
-  <div class="card-content">
-    <h3>{event.title}</h3>
-
-    {#if event.categories?.length}
-      <div class="card-chips">
-        {#each event.categories.slice(0, 2) as c}
-          <span class="chip">{c.name}</span>
-        {/each}
-        {#if event.categories.length > 2}
-          <span class="chip ghost">+{event.categories.length - 2}</span>
+        {#if query.length > 0}
+          <button class="search-clear" type="button" on:click={() => (query = "")}>
+            <iconify-icon icon="lucide:x" width="14" height="14"></iconify-icon>
+          </button>
         {/if}
       </div>
-    {/if}
-
-    <div class="meta">
-      <p class="location">
-        📍 {event.location}
-      </p>
-
-      <p class="date-text">
-        {new Date(event.date).toLocaleDateString("ru-RU", {
-          weekday: "short",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}
-      </p>
+      <button
+        class="sort-btn"
+        type="button"
+        on:click={() => (sort = sort === "soonest" ? "latest" : "soonest")}
+      >
+        <iconify-icon icon="lucide:arrow-up-down" width="14" height="14"></iconify-icon>
+        {sort === "soonest" ? $t('events.sort.soonest') : $t('events.sort.latest')}
+      </button>
+      {#if data.isOwner}
+        <a class="create-event-btn" href={withLang('/admin')}>
+          <iconify-icon icon="lucide:settings" width="16" height="16"></iconify-icon>
+          {$t('events.adminPanel')}
+        </a>
+      {/if}
     </div>
   </div>
-</a>
 
-    {/each}
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-group">
+      <span class="filter-label">{$t('events.filter.category')}</span>
+      <div class="chips">
+        <button
+          class="chip"
+          class:active={activeCategory === "All"}
+          type="button"
+          on:click={() => (activeCategory = "All")}
+        >
+          {$t('events.filter.all')}
+        </button>
+        {#each visibleCats as c}
+          <button
+            class="chip"
+            class:active={activeCategory === c}
+            type="button"
+            on:click={() => (activeCategory = c)}
+          >
+            {c}
+          </button>
+        {/each}
+        {#if allCategoryNames.length > CATS_LIMIT}
+          <button
+            class="chip chip-more"
+            type="button"
+            on:click={() => (categoriesOpen = !categoriesOpen)}
+          >
+            {categoriesOpen ? $t('events.filter.less') : `+${allCategoryNames.length - CATS_LIMIT}`}
+          </button>
+        {/if}
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-group">
+        <span class="filter-label">{$t('events.filter.date')}</span>
+        <div class="chips">
+          <button
+            class="chip"
+            class:active={dateFilter === "today"}
+            type="button"
+            on:click={() => (dateFilter = dateFilter === "today" ? "all" : "today")}
+          >
+            <iconify-icon icon="lucide:sun" width="13" height="13"></iconify-icon>
+            {$t('events.filter.today')}
+          </button>
+          <button
+            class="chip"
+            class:active={dateFilter === "week"}
+            type="button"
+            on:click={() => (dateFilter = dateFilter === "week" ? "all" : "week")}
+          >
+            <iconify-icon icon="lucide:calendar-range" width="13" height="13"></iconify-icon>
+            {$t('events.filter.thisWeek')}
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">{$t('events.filter.price')}</span>
+        <div class="chips">
+          <button
+            class="chip"
+            class:active={priceFilter === "free"}
+            type="button"
+            on:click={() => (priceFilter = priceFilter === "free" ? "all" : "free")}
+          >
+            {$t('events.filter.free')}
+          </button>
+          <button
+            class="chip"
+            class:active={priceFilter === "paid"}
+            type="button"
+            on:click={() => (priceFilter = priceFilter === "paid" ? "all" : "paid")}
+          >
+            {$t('events.filter.paid')}
+          </button>
+        </div>
+      </div>
+
+      {#if hasActiveFilters}
+        <button class="clear-btn" type="button" on:click={clearFilters}>
+          <iconify-icon icon="lucide:x" width="13" height="13"></iconify-icon>
+          {$t('events.filter.clear')}
+        </button>
+      {/if}
+    </div>
   </div>
-{/if}
+
+  <!-- Results count -->
+  <div class="results-bar">
+    <span class="results-count">{filtered.length} {filtered.length !== 1 ? $t('events.results.events') : $t('events.results.event')}</span>
+  </div>
+
+  <!-- Grid -->
+  {#if filtered.length > 0}
+    <div class="grid">
+      {#each filtered as event (event.id)}
+        <a class="card" href={withLang(`/events/${event.id}`)}>
+          <div class="card-img">
+            <img
+              src={photoSrc(event.photo, 500) || "/assets/images/placeholder-event.jpg"}
+              alt={event.title}
+              loading="lazy"
+              decoding="async"
+            />
+            <div class="card-price" class:free={isFreeEvent(event)}>
+              {priceBadge(event)}
+            </div>
+            <div class="card-date-badge">
+              <span class="cdb-day">{formatDay(event.date)}</span>
+              <span class="cdb-month">{formatMonth(event.date)}</span>
+            </div>
+            {#if event.isRegistered}
+              <div class="card-registered">
+                <iconify-icon icon="lucide:check" width="12" height="12"></iconify-icon>
+                {$t('events.card.going')}
+              </div>
+            {/if}
+          </div>
+
+          <div class="card-body">
+            <h3>{event.title}</h3>
+
+            {#if event.community}
+              <div class="org-badge">
+                {#if event.community.logoUrl}
+                  <img src={photoSrc(event.community.logoUrl)} alt="" class="org-logo" />
+                {:else}
+                  <iconify-icon icon="lucide:users" width="12" height="12"></iconify-icon>
+                {/if}
+                <span>{event.community.name}</span>
+              </div>
+            {:else if event.brand}
+              <div class="org-badge">
+                {#if event.brand.logoUrl}
+                  <img src={photoSrc(event.brand.logoUrl)} alt="" class="org-logo" />
+                {:else}
+                  <iconify-icon icon="lucide:building-2" width="12" height="12"></iconify-icon>
+                {/if}
+                <span>{event.brand.name}</span>
+              </div>
+            {/if}
+
+            {#if event.categories.length > 0}
+              <div class="card-cats">
+                {#each event.categories.slice(0, 2) as cat}
+                  <span class="cat-tag">{cat.name}</span>
+                {/each}
+                {#if event.categories.length > 2}
+                  <span class="cat-tag cat-more">+{event.categories.length - 2}</span>
+                {/if}
+              </div>
+            {/if}
+
+            <div class="card-info">
+              <span class="info-row">
+                <iconify-icon icon="lucide:map-pin" width="13" height="13"></iconify-icon>
+                <span>{event.location}</span>
+              </span>
+              <span class="info-row">
+                <iconify-icon icon="lucide:clock" width="13" height="13"></iconify-icon>
+                <span>{formatFullDate(event.date)}</span>
+              </span>
+            </div>
+
+            <div class="card-footer">
+              {#if event.goingCount > 0}
+                <div class="going">
+                  <iconify-icon icon="lucide:users" width="13" height="13"></iconify-icon>
+                  {event.goingCount} {$t('events.card.goingCount')}
+                </div>
+              {:else}
+                <div></div>
+              {/if}
+              <span class="card-arrow">
+                <iconify-icon icon="lucide:arrow-right" width="16" height="16"></iconify-icon>
+              </span>
+            </div>
+          </div>
+        </a>
+      {/each}
+    </div>
+  {:else}
+    <div class="empty">
+      <div class="empty-icon">
+        <iconify-icon icon="lucide:calendar-x-2" width="40" height="40"></iconify-icon>
+      </div>
+      <div class="empty-title">{$t('events.empty.title')}</div>
+      <div class="empty-sub">{$t('events.empty.subtitle')}</div>
+      {#if hasActiveFilters}
+        <button class="clear-btn-big" type="button" on:click={clearFilters}>
+          <iconify-icon icon="lucide:rotate-ccw" width="14" height="14"></iconify-icon>
+          {$t('events.filter.resetAll')}
+        </button>
+      {/if}
+    </div>
+  {/if}
+</div>
+
+<ContextAssistant contextKey="global" payload={{ page: "events" }} title="Events Assistant" />
 
 <style>
-  .icon {
-    margin-right: 4px;
-    opacity: 0.7;
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 18px 60px;
+  }
+
+  /* ============ HEADER ============ */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
   }
 
   h1 {
-    text-align: center;
-    margin-top: 3rem;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #0b3954;
-  }
-  .card-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 2px;
-  }
-
-  .chip {
-    font-size: 12px;
-    padding: 5px 9px;
-    border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    color: #111827;
-    line-height: 1;
-  }
-
-  .chip.ghost {
-    background: #fff;
-    color: #6b7280;
-  }
-
-  .top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    max-width: 1100px;
-    margin: 0 auto 1.5rem auto;
-    padding: 0 1rem;
-    gap: 1rem;
-  }
-
-  .categories {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    max-width: 100%;
-  }
-
-  /* chip */
-  .category {
-    background: white;
-    color: #0b3954;
-    border-radius: 9999px;
-    padding: 0.4rem 1rem;
-    border: 1px solid #cbd5e1;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.25s ease;
-    white-space: nowrap;
-  }
-
-  .category:hover {
-    background: #e2e8f0;
-  }
-
-  .category.active {
-    background: #0b3954;
-    color: white;
-    border-color: #0b3954;
-  }
-
-  .category.more {
-    background: #f8fafc;
-  }
-
-  /* popover */
-  .cat-popover {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    width: min(520px, 100%);
-    z-index: 60;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 10px;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-  }
-
-  .cat-search {
-    width: 100%;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 10px 12px;
-    font-size: 14px;
-    background: #f9fafb;
-    outline: none;
-  }
-
-  .cat-search:focus {
-    background: #fff;
-    border-color: #60a5fa;
-  }
-
-  .cat-list {
-    margin-top: 10px;
-    max-height: 280px;
-    overflow: auto;
-    padding-right: 4px;
-    display: grid;
-    gap: 6px;
-  }
-
-  .cat-item {
-    width: 100%;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    border-radius: 12px;
-    padding: 10px 12px;
-    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    text-align: left;
+    gap: 10px;
+    font-size: 26px;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0;
   }
 
-  .cat-item:hover {
-    background: #f8fafc;
+  h1 iconify-icon {
+    color: #4f46e5;
   }
 
-  .cat-item.active {
-    border-color: #bfdbfe;
-    background: #eff6ff;
-  }
-
-  .cat-name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .cat-check {
-    flex: 0 0 auto;
-    color: #1d4ed8;
-    font-weight: 700;
-  }
-
-  .cat-empty {
-    padding: 10px 6px;
-    color: #6b7280;
+  .header-sub {
     font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0;
   }
 
-  .card:hover .img-wrapper img {
-    transform: scale(1.05);
-  }
-
-  .img-wrapper img {
-    transition: transform 0.4s ease;
-  }
-
-  .controls {
+  .header-right {
     display: flex;
     align-items: center;
     gap: 10px;
   }
 
-  .label {
-    font-size: 0.85rem;
-    color: #334155;
-  }
-
-  .segmented {
+  .create-event-btn {
     display: inline-flex;
-    border: 1px solid #cbd5e1;
-    border-radius: 999px;
-    background: #ffffff;
-    overflow: hidden;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 10px;
+    background: #4f46e5;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none;
+    transition: background 0.15s;
+    white-space: nowrap;
   }
 
-  .seg-btn {
-    border: 0;
-    background: transparent;
-    padding: 0.45rem 0.9rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    color: #0b3954;
-    transition: background 0.2s ease;
+  .create-event-btn:hover {
+    background: #4338ca;
   }
 
-  .seg-btn:hover {
-    background: #f1f5f9;
-  }
-
-  .seg-btn.active {
-    background: #0b3954;
+  .create-event-btn :global(iconify-icon) {
     color: #fff;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-    gap: 1rem;
-    max-width: 1100px;
-    margin: 0 auto 3rem auto;
-    padding: 0 0.5rem;
+  /* Search */
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 9px 14px;
+    min-width: 280px;
+    transition: border-color 0.15s;
   }
 
-  .card {
+  .search-box:focus-within {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+  }
+
+  .search-box iconify-icon {
+    color: #94a3b8;
+    flex-shrink: 0;
+  }
+
+  .search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+    color: #0f172a;
+    background: transparent;
+    font-family: inherit;
+  }
+
+  .search-box input::placeholder {
+    color: #94a3b8;
+  }
+
+  .search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+  }
+
+  .search-clear:hover {
+    background: #e2e8f0;
+  }
+
+  .sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #0f172a;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .sort-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .sort-btn iconify-icon {
+    color: #94a3b8;
+  }
+
+  /* ============ FILTERS ============ */
+  .filters {
     display: flex;
     flex-direction: column;
-    background: white;
-    border-radius: 0.75rem;
+    gap: 12px;
+    padding: 16px 20px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    margin-bottom: 16px;
+  }
+
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+
+  .chip:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .chip.active {
+    background: #4f46e5;
+    color: #fff;
+    border-color: #4f46e5;
+  }
+
+  .chip-more {
+    border-style: dashed;
+    color: #94a3b8;
+  }
+
+  .chip-more:hover {
+    color: #4f46e5;
+    border-color: #c7d2fe;
+  }
+
+  .clear-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ef4444;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: auto;
+  }
+
+  .clear-btn:hover {
+    background: #fee2e2;
+  }
+
+  /* ============ RESULTS ============ */
+  .results-bar {
+    margin-bottom: 14px;
+  }
+
+  .results-count {
+    font-size: 13px;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+
+  /* ============ GRID ============ */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  /* ============ CARD ============ */
+  .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
     overflow: hidden;
-    height: 340px;
-    width: 100%;
     text-decoration: none;
     color: inherit;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    transition:
-      transform 0.25s ease,
-      box-shadow 0.25s ease;
-    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
   }
 
   .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.07);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+    border-color: #c7d2fe;
   }
 
-  .img-wrapper {
-    flex: 0 0 160px;
-    height: 160px;
+  .card-img {
     position: relative;
-    width: 100%;
+    height: 180px;
     overflow: hidden;
+    background: #0f172a;
   }
 
-  .badge {
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    font-size: 12px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    background: rgba(17, 24, 39, 0.55);
-    color: #fff;
-    backdrop-filter: blur(6px);
-  }
-
-  .img-wrapper img {
+  .card-img img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
   }
 
-  .card-content {
-    padding: 0.8rem 1rem;
-    flex-grow: 1;
+  .card:hover .card-img img {
+    transform: scale(1.05);
+  }
+
+  .card-price {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    font-weight: 800;
+    font-size: 12px;
+    color: #0f172a;
+  }
+
+  .card-price.free {
+    background: rgba(16, 185, 129, 0.9);
+    border-color: transparent;
+    color: #fff;
+  }
+
+  .card-date-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    line-height: 1;
   }
 
-  .card h3 {
-    margin-bottom: 0.2rem;
-    color: #0b3954;
-    font-size: 1rem;
+  .cdb-day {
+    font-size: 18px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .cdb-month {
+    font-size: 10px;
+    font-weight: 800;
+    color: #4f46e5;
+    letter-spacing: 0.05em;
+  }
+
+  .card-registered {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.9);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    backdrop-filter: blur(6px);
+  }
+
+  .card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .card-body h3 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: color 0.15s;
+  }
+
+  .card:hover .card-body h3 {
+    color: #4f46e5;
+  }
+
+  .org-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  .org-badge :global(iconify-icon) {
+    color: #4f46e5;
+  }
+
+  .org-logo {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    object-fit: cover;
+  }
+
+  .card-cats {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .cat-tag {
+    font-size: 11px;
     font-weight: 600;
-  }
-  .meta {
-    margin-top: auto;
-    display: grid;
-    gap: 2px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
   }
 
-  .location {
-    font-size: 0.85rem;
-    color: #475569;
+  .cat-more {
+    color: #94a3b8;
+    background: #f8fafc;
+  }
+
+  .card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: auto;
+  }
+
+  .info-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .info-row iconify-icon {
+    color: #94a3b8;
+    flex-shrink: 0;
+  }
+
+  .info-row span {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .date {
-    font-size: 0.85rem;
-    color: #0b3954;
-    font-weight: 500;
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
   }
-  .meta p {
-    margin: 0;
+
+  .going {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #059669;
   }
-  .img-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.15),
-    rgba(0, 0, 0, 0.55)
-  );
-}
 
-.top-badges {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 2;
-}
+  .card-arrow {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    transition: all 0.15s;
+  }
 
-.price-badge {
-  background: rgba(255, 255, 255, 0.95);
-  color: #0b3954;
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 600;
-}
+  .card:hover .card-arrow {
+    background: #4f46e5;
+    color: #fff;
+  }
 
-.date-pill {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  z-index: 2;
-  background: white;
-  border-radius: 10px;
-  padding: 6px 10px;
-  text-align: center;
-  line-height: 1;
-}
+  /* ============ EMPTY ============ */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 60px 20px;
+    text-align: center;
+  }
 
-.date-pill .day {
-  font-size: 18px;
-  font-weight: 700;
-  color: #0b3954;
-}
+  .empty-icon {
+    color: #cbd5e1;
+  }
 
-.date-pill .month {
-  font-size: 11px;
-  text-transform: uppercase;
-  color: #64748b;
-}
+  .empty-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+  }
 
-.card-content h3 {
-  font-size: 1.05rem;
-  line-height: 1.3;
-}
+  .empty-sub {
+    font-size: 14px;
+    color: #94a3b8;
+  }
 
-.date-text {
-  font-size: 0.8rem;
-  color: #64748b;
-}
+  .clear-btn-big {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #4f46e5;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 12px;
+    padding: 10px 18px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: all 0.15s;
+  }
 
-.card {
-  height: auto;
-  min-height: 360px;
-}
+  .clear-btn-big:hover {
+    background: #e0e7ff;
+  }
 
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1000px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .header-right {
+      width: 100%;
+    }
+
+    .search-box {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filter-row {
+      gap: 10px;
+    }
+
+    .filters {
+      padding: 14px;
+    }
+  }
 </style>

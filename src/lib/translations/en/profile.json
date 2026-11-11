@@ -1,0 +1,135 @@
+{
+  "tabs": {
+    "about": "About",
+    "interests": "Interests",
+    "companies": "Companies",
+    "events": "Events",
+    "followers": "Followers",
+    "following": "Following",
+    "tickets": "Tickets",
+    "meetings": "Meetings",
+    "achievements": "Achievements",
+    "settings": "Settings",
+    "notifications": "Notifications"
+  },
+  "header": {
+    "editProfile": "Edit Profile",
+    "socialCapital": "Social Capital",
+    "rank": "Rank",
+    "trustScore": "Trust Score",
+    "defaultUser": "User",
+    "defaultStatus": "Member",
+    "defaultLocation": "Remote",
+    "joined": "Joined",
+    "followers": "followers",
+    "following": "Following",
+    "online": "Online",
+    "lastSeenRecently": "Last seen recently",
+    "lastSeen": "Last seen",
+    "minutesAgo": "min ago",
+    "hoursAgo": "h ago",
+    "daysAgo": "d ago"
+  },
+  "about": {
+    "title": "About",
+    "bio": "Bio",
+    "noBio": "No bio available.",
+    "location": "Location",
+    "email": "Email",
+    "joined": "Joined",
+    "privacy": "Privacy",
+    "privateProfile": "Private profile",
+    "publicProfile": "Public profile",
+    "emailNotifications": "Email notifications",
+    "chatBotNotifications": "Chat bot notifications",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "sidebar": {
+    "socialCapital": "Social Capital",
+    "pts": "pts",
+    "nextRank": "Next rank",
+    "howItWorks": "How it works",
+    "trustScore": "Trust Score",
+    "highlyTrusted": "Highly Trusted",
+    "trusted": "Trusted",
+    "verified": "Verified",
+    "newMember": "New Member",
+    "basedOnActivity": "Based on verified activity",
+    "socialProof": "SOCIAL PROOF",
+    "achievements": "Achievements"
+  },
+  "achievements": {
+    "progress": "Progress",
+    "completed": "completed",
+    "filterAll": "All",
+    "filterOneOff": "One-off",
+    "filterProgress": "Progress",
+    "filterSeasonal": "Seasonal",
+    "completeToEarn": "Complete activities to earn achievements"
+  },
+  "achievementDetail": {
+    "notFound": "Achievement not found",
+    "backToAchievements": "Back to Achievements",
+    "earned": "Earned",
+    "owners": "Owners",
+    "rarity": "Rarity",
+    "yourLevel": "Your Level",
+    "communityRarity": "Community Rarity",
+    "rarityDesc": "members earned this",
+    "levels": "Levels",
+    "target": "Target",
+    "starterLevel": "Starter level",
+    "nextMilestone": "Next milestone",
+    "yourProgress": "Your Progress",
+    "levelEarned": "Level earned:",
+    "notEarnedYet": "You haven't earned this achievement yet",
+    "completeToUnlock": "Complete the required activity to unlock it"
+  },
+  "events": {
+    "upcoming": "Upcoming",
+    "visited": "Visited",
+    "createdByYou": "Created by you",
+    "organizer": "Organizer",
+    "attended": "Attended",
+    "free": "Free",
+    "browseEvents": "Browse Events",
+    "registerOrCreate": "Register for events or create your own",
+    "openEventChat": "Open event chat"
+  },
+  "tickets": {
+    "registerToSee": "Register for events to see your tickets here",
+    "pastEvents": "Past Events"
+  },
+  "following": {
+    "browseMembers": "Browse Members",
+    "unfollow": "Unfollow"
+  },
+  "interests": {
+    "hint": "Tap to select or remove your interests",
+    "noCategories": "No categories available."
+  },
+  "meetings": {
+    "noMeetings": "No meetings scheduled."
+  },
+  "settings": {
+    "title": "Settings",
+    "privacy": "Privacy",
+    "profilePrivate": "Private profile",
+    "emailNotifications": "Email notifications",
+    "chatBotNotifications": "ChatBot notifications",
+    "save": "Save Settings",
+    "saving": "Saving...",
+    "saved": "Settings saved!"
+  },
+  "empty": {
+    "noTickets": "No tickets yet",
+    "noMeetings": "No meetings yet",
+    "noEvents": "No events yet",
+    "noFollowers": "No followers yet",
+    "noFollowing": "Not following anyone yet",
+    "noInterests": "No interests yet",
+    "noCompanies": "No companies yet",
+    "noAchievements": "No achievements yet"
+  }
+}

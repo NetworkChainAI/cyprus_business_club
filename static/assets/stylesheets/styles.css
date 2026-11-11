@@ -1,4 +1,10 @@
 /* GLOBAL */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   scroll-behavior: smooth;
   height: 100%;
@@ -10,12 +16,13 @@ body {
 }
 html {
   height: 100%;
-  background: linear-gradient(180deg, #e7f1ff 0%, #4f69ff 100%);
+  background: rgb(248 250 252);
   background-attachment: fixed;
 }
+
 body {
   margin: 0;
-  font-family: "Poppins", sans-serif;
+  font-family: "Poppins", "Inter", sans-serif;
   color: #5f5f65;
   background: transparent; 
   line-height: 1.8;
@@ -47,7 +54,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Poppins", sans-serif;
+  font-family: "Poppins", "Inter", sans-serif;
 }
 
 [class^="flaticon-"]:before,

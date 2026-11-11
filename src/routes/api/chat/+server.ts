@@ -45,21 +45,24 @@ export const GET = async ({ cookies }: RequestEvent) => {
       if (ev.chatId) eventByChatId.set(ev.chatId, ev);
     }
 
-    // 2) Формируем ответ (как было) + добавляем event
-    const formatted = await Promise.all(
-      chats.map(async (chat) => {
-        const lastMessage = chat.messages[0] || null;
+    // 2) Single query for all unread counts (replaces N+1 pattern)
+    const unreadMessages = await prisma.message.findMany({
+      where: {
+        chatId: { in: chatIds },
+        senderId: { not: userId },
+        reads: { none: { userId } },
+      },
+      select: { chatId: true },
+    });
+    const unreadCountMap = new Map<string, number>();
+    for (const m of unreadMessages) {
+      unreadCountMap.set(m.chatId, (unreadCountMap.get(m.chatId) ?? 0) + 1);
+    }
 
-        // ⚠️ оставляем как у тебя (чтобы ничего не сломать)
-        const unreadCount = await prisma.messageRead.count({
-          where: {
-            message: {
-              chatId: chat.id,
-              senderId: { not: userId },
-            },
-            userId: userId,
-          },
-        });
+    // 3) Формируем ответ + добавляем event
+    const formatted = chats.map((chat) => {
+        const lastMessage = chat.messages[0] || null;
+        const unreadCount = unreadCountMap.get(chat.id) ?? 0;
 
         const other = chat.participants.find((p) => p.userId !== userId)?.user;
 
@@ -103,8 +106,7 @@ export const GET = async ({ cookies }: RequestEvent) => {
           lastMessageCreatedAt: lastMessage?.createdAt || null,
           unreadCount,
         };
-      })
-    );
+      });
 
     formatted.sort((a, b) => {
       if (!a.lastMessageCreatedAt) return 1;

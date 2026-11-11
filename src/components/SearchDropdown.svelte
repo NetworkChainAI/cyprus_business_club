@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from "svelte";
   import { browser } from "$app/environment";
-  
+  import { t } from "$lib/i18n";
+
   export let options: { id: string; name: string }[] = [];
   export let selected: string[] = [];
-  export let placeholder = "Select...";
-  export let searchPlaceholder = "Search...";
+  export let placeholder = "";
+  export let searchPlaceholder = "";
   export let multiple = true;
   export let maxItems: number | null = null;
   export let maxChips = 3;
@@ -93,7 +94,7 @@
           {/if}
         </div>
       {:else}
-        <span class="sd-placeholder">{placeholder}</span>
+        <span class="sd-placeholder">{placeholder || $t('common.searchDropdown.select')}</span>
       {/if}
     </div>
 
@@ -121,7 +122,7 @@
         <input
           type="text"
           class="search-input"
-          placeholder={searchPlaceholder}
+          placeholder={searchPlaceholder || $t('common.searchDropdown.search')}
           bind:value={search}
           autocomplete="off"
         />
@@ -132,7 +133,7 @@
 
       <div class="options-list">
         {#if filteredOptions.length === 0}
-          <div class="empty">No results</div>
+          <div class="empty">{$t('common.searchDropdown.noResults')}</div>
         {:else}
           {#each filteredOptions as option (option.id)}
             {@const isSelected = selected.includes(option.id)}

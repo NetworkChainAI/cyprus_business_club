@@ -2,8 +2,14 @@ import type { RequestHandler } from "./$types";
 import { CustodyAPI } from "$lib/custody";
 import { verifyJwt } from "$lib/jwt";
 import prisma from "$lib/prisma";
+import { recalcTrustScore, awardSocialCapital } from "$lib/reputation";
+import { checkRateLimit, getClientIp } from "$lib/server/security";
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
+  // Rate limit: 5 attempts per 15 minutes per IP
+  const ip = getClientIp(request);
+  const rl = checkRateLimit("custody_register", ip, 5, 15 * 60_000);
+  if (rl) return rl;
 
   const body = await request.json();
   const { password } = body;
@@ -52,7 +58,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       secure: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24
+      maxAge: 60 * 60
     });
 
     const walletAddress = await api.createWallet();
@@ -65,6 +71,13 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     });
 
     console.log("Update result:", updateResult);
+
+    // Reputation: custody wallet opened
+    recalcTrustScore(payload.uid).catch(console.error);
+    awardSocialCapital(payload.uid, "CUSTODY_OPENED", {
+      refId: walletAddress,
+      refType: "WALLET",
+    }).catch(console.error);
 
     return new Response(
       JSON.stringify({

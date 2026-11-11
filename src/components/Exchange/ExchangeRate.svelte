@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import Decimal from "decimal.js";
 
   export let currencyFrom: string = "";

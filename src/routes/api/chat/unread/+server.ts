@@ -24,8 +24,14 @@ export const GET = async ({ cookies }: RequestEvent) => {
 
     const userId = payload.uid;
 
-    const unread = await prisma.messageRead.count({
-      where: { userId }
+    const unread = await prisma.message.count({
+      where: {
+        senderId: { not: userId },
+        chat: {
+          participants: { some: { userId } }
+        },
+        reads: { none: { userId } }
+      }
     });
 
     return json({ unread });

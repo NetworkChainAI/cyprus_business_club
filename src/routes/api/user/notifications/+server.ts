@@ -8,7 +8,7 @@ const json = (data: any, status = 200) =>
     headers: { 'Content-Type': 'application/json' }
   });
 
-export const GET = async ({ cookies }: RequestEvent) => {
+export const GET = async ({ cookies, url }: RequestEvent) => {
   try {
     const token = cookies.get('auth_token');
 
@@ -22,9 +22,15 @@ export const GET = async ({ cookies }: RequestEvent) => {
       return json({ notifications: [] });
     }
 
+    const unreadOnly = url.searchParams.get('unread') === 'true';
+
     const notifications = await prisma.notification.findMany({
-      where: { userId: payload.uid },
-      orderBy: { createdAt: 'desc' }
+      where: {
+        userId: payload.uid,
+        ...(unreadOnly ? { isRead: false } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      ...(unreadOnly ? {} : { take: 50 }),
     });
 
     return json({ notifications });

@@ -1,0 +1,56 @@
+{
+  "pageTitle": "Reputation System",
+  "heroSub": "Your reputation reflects your trust, expertise, and contribution to the community. It's built from two pillars: <strong>Social Capital</strong> and <strong>Trust Score</strong>.",
+  "socialCapital": {
+    "title": "Social Capital",
+    "sub": "Measures your activity, influence, and value to the community",
+    "desc": "Social Capital grows as you contribute to the platform. Every meaningful action earns you points. The more you engage — creating events, building connections, growing the network — the higher your rank.",
+    "howToEarn": "How to Earn",
+    "createEvent": "Create an Event",
+    "createEventDesc": "Organize and host community events",
+    "openWallet": "Open Custody Wallet",
+    "openWalletDesc": "Set up your on-chain wallet",
+    "referral": "Referral Registered",
+    "referralDesc": "Invite someone who joins the platform",
+    "joinCommunity": "Join a Community",
+    "joinCommunityDesc": "Become a member of a community",
+    "attendEvent": "Someone Attends Your Event",
+    "attendEventDesc": "Each registration on your event",
+    "gainFollower": "Gain a Follower",
+    "gainFollowerDesc": "When someone follows your profile",
+    "ranks": "Ranks",
+    "ranksDesc": "As your Social Capital grows, you unlock higher ranks that reflect your standing in the community.",
+    "pts": "pts"
+  },
+  "trustScore": {
+    "title": "Trust Score",
+    "sub": "Reflects your identity verification and reliability (0–100)",
+    "desc": "Trust Score shows how verified and reliable you are. It's based on profile completeness, identity verification, and your behavior on the platform. A higher Trust Score means the community can rely on you more.",
+    "howToBuild": "How to Build Trust",
+    "addPhoto": "Add a profile photo",
+    "addPhone": "Add phone number",
+    "openWallet": "Open custody wallet",
+    "speakEvent": "Speak at an event",
+    "kyc": "KYC verification",
+    "levels": "Trust Levels",
+    "newMember": "New Member",
+    "newMemberRange": "0 – 39",
+    "newMemberDesc": "New to the platform. Build trust by completing your profile and participating.",
+    "verified": "Verified",
+    "verifiedRange": "40 – 69",
+    "verifiedDesc": "Profile is partially verified. Active member with growing credibility.",
+    "highlyTrusted": "Highly Trusted",
+    "highlyTrustedRange": "70 – 100",
+    "highlyTrustedDesc": "Fully verified and highly reliable. Your actions carry more weight."
+  },
+  "together": {
+    "title": "How They Work Together",
+    "sub": "Trust Score amplifies your Social Capital earnings",
+    "desc": "Your Trust Score directly affects how much Social Capital you earn. Higher trust means your contributions are valued more. When your actions award points to others, your trust multiplier applies."
+  },
+  "stayActive": {
+    "title": "Stay Active",
+    "sub": "Use it or lose it",
+    "desc": "To keep the system fair, accounts inactive for <strong>60 days</strong> lose <strong>5%</strong> of their Social Capital. Stay engaged to maintain your rank and influence."
+  }
+}

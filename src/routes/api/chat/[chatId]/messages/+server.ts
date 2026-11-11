@@ -13,6 +13,12 @@ export const GET = async ({ params, url, cookies }: RequestEvent) => {
     const userId = payload?.uid;
     if (!userId) return new Response("Invalid token", { status: 401 });
 
+    // Verify user is a participant of this chat
+    const participant = await prisma.chatParticipant.findUnique({
+      where: { userId_chatId: { userId, chatId: chatId! } },
+    });
+    if (!participant) return new Response("Forbidden: not a chat participant", { status: 403 });
+
     const after = url.searchParams.get("after");
 
     const messages = await prisma.message.findMany({
@@ -24,7 +30,6 @@ export const GET = async ({ params, url, cookies }: RequestEvent) => {
 
       // ✅ добавили sender (минимальный select)
       include: {
-        reads: true,
         sender: {
           select: {
             id: true,

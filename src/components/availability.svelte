@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { t } from "$lib/i18n";
 
   let selectedDate: string | null = null;
   let startTime = "12:00";
@@ -47,7 +48,7 @@
       availability = [...availability, newSlot];
       selectedDate = null;
     } else {
-      alert("Ошибка: " + (await res.text()));
+      alert(t.get('common.error.generic') + " " + (await res.text()));
     }
   }
 
@@ -55,14 +56,14 @@
 </script>
 
 {#if loading}
-  <p class="loading">Загрузка...</p>
+  <p class="loading">{$t('common.btn.loading')}</p>
 {:else}
   {#if !isPartner}
     <p class="error-msg">
-      Доступ запрещён. Только партнёры могут создавать свободное время.
+      {$t('common.availability.accessDenied')}
     </p>
   {:else}
-    <h2 class="title">Свободное время</h2>
+    <h2 class="title">{$t('common.availability.title')}</h2>
 
     <div class="calendar">
       {#each days as day}

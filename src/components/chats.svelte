@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-import { goto } from "$app/navigation";
+  import { t } from "$lib/i18n";
+  import { goto } from "$app/navigation";
 
 export let chatId: string | null = null;
 
@@ -191,7 +192,7 @@ onMount(async () => {
 <div class="chat-wrapper">
   <!-- LEFT SIDEBAR -->
   <aside class="sidebar">
-    <h3 class="sidebar-title">Сообщения</h3>
+    <h3 class="sidebar-title">{$t('chat.messages')}</h3>
 
     <div class="chat-list">
       {#each chats as chat}
@@ -204,7 +205,7 @@ onMount(async () => {
               {chat.otherUser?.info?.name || chat.otherUser?.email}
             </div>
             <div class="chat-preview">
-              {chat.lastMessage || "Нет сообщений"}
+              {chat.lastMessage || $t('chat.noMessages')}
             </div>
           </div>
 
@@ -242,13 +243,13 @@ onMount(async () => {
       <div class="input-area">
         <input
           bind:value={inputText}
-          placeholder="Сообщение..."
+          placeholder={$t('chat.typeMessage')}
           on:keydown={(e) => e.key === "Enter" && submit()}
         />
         <button on:click={submit}>➤</button>
       </div>
     {:else}
-      <div class="chat-placeholder">Выберите чат</div>
+      <div class="chat-placeholder">{$t('chat.selectChat')}</div>
     {/if}
   </main>
 </div>

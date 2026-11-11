@@ -5,6 +5,8 @@ declare global {
         id: string;
         email: string;
       };
+      emailVerified: boolean;
+      locale: string;
     }
   }
 }

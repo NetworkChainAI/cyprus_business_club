@@ -1,91 +1,123 @@
 <script lang="ts">
-  import { timeAgo } from "$lib/utils/timeAgo";
-  import { onMount } from "svelte";
-  import BookingModal from "./bookingModal.svelte";
-  import ContextAssistant from "./ContextAssistant.svelte";
+  import { onMount, onDestroy } from "svelte";
+  import { goto } from "$app/navigation";
   import { photoSrc } from "$lib/utils/photo";
+  import { t } from "$lib/i18n";
+  import { getDateLocale } from "$lib/utils/dateLocale";
+  import { pageHasAssistant } from "$lib/stores/assistant";
+  import ContextAssistant from "./ContextAssistant.svelte";
+  import AskAiButton from "./AskAiButton.svelte";
+
+  onMount(() => pageHasAssistant.set(true));
+  onDestroy(() => pageHasAssistant.set(false));
 
   export let data: any;
-  const member = data.member;
-  const currentUserId = data.currentUserId;
-  let availability = data.availability || [];
-  let showBooking = false;
 
-  let activeTab = "upcoming";
+  let assistantOpen = false;
 
-  const registeredEvents = data.registeredEvents || [];
-  const visitedEvents = data.visitedEvents || [];
-  const upcomingEvents = data.upcomingEvents || [];
-  const createdEvents = data.createdEvents || [];
+  let member = data?.member;
+  const currentUserId = data?.currentUserId ?? null;
 
-  let isFollowing = false;
-  let loadingFollow = false;
-  let followersCount = 0;
-  let followingCount = 0;
+  let tab:
+    | "about"
+    | "interests"
+    | "companies"
+    | "events"
+    | "followers"
+    | "following"
+    | "mutuals" = "about";
 
-  // ✅ аватар: либо google http(s), либо /api/photo/<file>, либо dicebear
-  const fallback = () =>
-    "https://api.dicebear.com/7.x/initials/svg?seed=" +
-    encodeURIComponent(member?.info?.name || "User");
-
-  $: avatar = photoSrc(member?.info?.photo) ?? fallback();
-
-  function selectSlot(meeting: any) {
-    console.log("Meeting created:", meeting);
-    showBooking = false;
+  function displayName(u: any) {
+    return u?.info?.name ?? u?.email ?? "User";
   }
 
-  onMount(async () => {
-    try {
-      const res = await fetch(`/api/member/follow?userId=${member.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        isFollowing = data.following;
-      }
+  function resolvePhoto(u: any, width?: number) {
+    return photoSrc(u?.info?.photo ?? null, width);
+  }
 
-      const res2 = await fetch(`/api/member/followers?userId=${member.id}`);
-      if (res2.ok) {
-        const data2 = await res2.json();
-        followersCount = data2.counts.followers;
-        followingCount = data2.counts.following;
-      }
-    } catch (err) {
-      console.error("Profile load error:", err);
-    }
-  });
+  let photoBroken = false;
+
+  function statusText(u: any) {
+    return u?.info?.status ?? "Member";
+  }
+
+  function locationText(u: any) {
+    return u?.info?.location ?? "Remote";
+  }
+
+  function formatJoined(dateLike: any) {
+    const d = new Date(dateLike);
+    return d.toLocaleDateString(getDateLocale(), { month: "long", year: "numeric" });
+  }
+
+  function lastSeenInfo(lastOnline: any) {
+    if (!lastOnline) return { text: `${t.get('members.lastSeen')} recently`, isOnline: false };
+
+    const last = new Date(lastOnline).getTime();
+    const now = Date.now();
+    const diff = Math.max(0, now - last);
+
+    const mins = Math.floor(diff / 60000);
+    if (mins < 2) return { text: t.get('members.online'), isOnline: true };
+    if (mins < 60) return { text: `${t.get('members.lastSeen')} ${mins}m ${t.get('members.ago')}`, isOnline: false };
+
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return { text: `${t.get('members.lastSeen')} ${hrs}h ${t.get('members.ago')}`, isOnline: false };
+
+    const days = Math.floor(hrs / 24);
+    return { text: `${t.get('members.lastSeen')} ${days}d ${t.get('members.ago')}`, isOnline: false };
+  }
+
+  $: ls = lastSeenInfo(member?.lastOnline);
+
+  const followers = data?.followersCount ?? 0;
+  const following = data?.followingCount ?? 0;
+
+  const socialCapital = 850;
+  const trustScore = 98;
+
+  const upcomingEvents = data?.upcomingEvents ?? [];
+  const visitedEvents = data?.visitedEvents ?? [];
+  const createdEvents = data?.createdEvents ?? [];
+
+  const isMe = !!(currentUserId && member?.id === currentUserId);
+
+  let followBusy = false;
+  let chatBusy = false;
 
   async function toggleFollow() {
-    loadingFollow = true;
+    if (!member?.id || isMe) return;
+    if (followBusy) return;
+
+    followBusy = true;
+
+    const was = !!member.isFollowing;
+
+    member = { ...member, isFollowing: !was };
+
     try {
-      const method = isFollowing ? "DELETE" : "POST";
       const res = await fetch("/api/member/follow", {
-        method,
+        method: was ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: member.id }),
       });
 
-      if (res.ok) {
-        isFollowing = !isFollowing;
-
-        const res2 = await fetch(`/api/member/followers?userId=${member.id}`);
-        if (res2.ok) {
-          const data2 = await res2.json();
-          followersCount = data2.counts.followers;
-          followingCount = data2.counts.following;
-        }
-      } else {
-        const errText = await res.text();
-        console.error("Follow toggle failed:", errText);
-        alert(errText);
+      if (!res.ok) {
+        member = { ...member, isFollowing: was };
       }
-    } catch (err) {
-      console.error("Follow error:", err);
+    } catch (e) {
+      member = { ...member, isFollowing: was };
     } finally {
-      loadingFollow = false;
+      followBusy = false;
     }
   }
 
-  async function startChat() {
+  async function openChat() {
+    if (!member?.id || isMe) return;
+    if (chatBusy) return;
+
+    chatBusy = true;
+
     try {
       const res = await fetch("/api/chat/create", {
         method: "POST",
@@ -93,551 +125,844 @@
         body: JSON.stringify({ userId: member.id }),
       });
 
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error("Chat creation failed:", txt);
-        alert("Cannot start chat: " + txt);
-        return;
-      }
+      if (!res.ok) return;
 
-      const data = await res.json();
-      window.location.href = `/chat/${data.chatId}`;
-    } catch (err) {
-      console.error("Start chat error:", err);
-      alert("Error creating chat");
+      const { chatId } = await res.json();
+
+      goto(`/chat/${chatId}`);
+    } catch (e) {
+      // ignore
+    } finally {
+      chatBusy = false;
     }
-  }
-
-  function handleBookMeeting() {
-    alert(`Booking meeting with ${member.info?.name}`);
   }
 </script>
 
-<ContextAssistant
-  contextKey="expert"
-  payload={member}
-  title="Спросить про эксперта"
-/>
-{#if !member}
-  <p class="error">Member not found.</p>
-{:else}
-  <div class="profile-layout">
-    <!-- Левая колонка -->
-    <div class="profile-card">
-      <div class="profile-header">
-        <img src={avatar} alt="Member photo" class="profile-photo" />
+<section class="page">
+  <div class="container">
+    <!-- TOP PROFILE CARD -->
+    <div class="top">
+      <div class="left">
+        <div class="avatarWrap">
+          <div class="avatar">
+            {#if resolvePhoto(member, 200) && !photoBroken}
+              <img src={resolvePhoto(member, 200)} alt={displayName(member)} decoding="async" on:error={() => (photoBroken = true)} />
+            {:else}
+              <div class="fallback">{displayName(member)[0].toUpperCase()}</div>
+            {/if}
+          </div>
+          <div class="onlineDot" title="Online status"></div>
+        </div>
 
-        <div class="user-info">
-          <h2>{member.info?.name || "Unnamed member"}</h2>
-          <span class="badge">{member.info?.status || "Member"}</span>
+        <div class="info">
+          <div class="nameRow">
+            <div class="name">{displayName(member)}</div>
+            <span class="verified" title="Verified">
+              <iconify-icon icon="lucide:badge-check" width="18"></iconify-icon>
+            </span>
+          </div>
 
-          <!-- 🔥 блок с количеством подписчиков -->
-          <div class="followers-block">
-            <div class="followers-item">
-              <span class="followers-count">{followersCount}</span>
-              <span class="followers-label">Followers</span>
+          <div class="subtitle">
+            Organizing Web3 Summit <span class="globe">🌐</span>
+          </div>
+
+          <div class="meta">
+            <span class="metaItem" class:onlineNow={ls.isOnline}>
+              <span class="dot"></span>
+              {ls.text}
+            </span>
+
+            <span class="metaItem">
+              <iconify-icon icon="lucide:map-pin" width="14"></iconify-icon>
+              {locationText(member)}
+            </span>
+
+            <span class="metaItem">
+              <iconify-icon icon="lucide:calendar" width="14"></iconify-icon>
+              Joined {formatJoined(member?.createdAt)}
+            </span>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <span class="n">{followers}</span> {$t('members.followers')}
             </div>
-            <div class="followers-item">
-              <span class="followers-count">{followingCount}</span>
-              <span class="followers-label">Following</span>
+            <div class="stat">
+              <span class="n">{following}</span> {$t('members.followingTab')}
             </div>
           </div>
         </div>
       </div>
 
-      <div class="divider"></div>
-
-      <div class="profile-info">
-        <div class="joined">
-          <span class="icon">📅</span>
-          Зарегистрирован:{" "}
-          {new Date(member.createdAt).toLocaleDateString("ru-RU", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </div>
-
-        {#if member.lastOnline}
-          <div class="last-online">
-            <span class="icon">🕒</span>
-            Был(а) онлайн {timeAgo(member.lastOnline)}
-          </div>
-        {:else}
-          <div class="last-online">
-            <span class="icon">🕒</span>
-            Ещё не был(а) онлайн
-          </div>
+      <div class="actions">
+        {#if !isMe}
+          <button
+            class="btnFollow"
+            class:followed={member?.isFollowing}
+            disabled={followBusy}
+            on:click={toggleFollow}
+          >
+            <iconify-icon
+              icon={member?.isFollowing
+                ? "lucide:user-check"
+                : "lucide:user-plus"}
+              width="18"
+            ></iconify-icon>
+            {member?.isFollowing ? $t('members.following') : $t('members.follow')}
+          </button>
         {/if}
+
+        <div class="actionRow">
+          <button
+            class="iconBtn"
+            title="Message"
+            disabled={isMe || chatBusy}
+            on:click={openChat}
+          >
+            <iconify-icon icon="lucide:message-square" width="18"
+            ></iconify-icon>
+          </button>
+
+          <button class="iconBtn" title="Gift">
+            <iconify-icon icon="lucide:gift" width="18"></iconify-icon>
+          </button>
+
+          <AskAiButton on:click={() => (assistantOpen = true)} />
+        </div>
       </div>
-
-      {#if currentUserId !== member.id}
-        <button
-          class="follow-btn"
-          on:click={toggleFollow}
-          disabled={loadingFollow}
-        >
-          {#if loadingFollow}
-            ⏳
-          {:else if isFollowing}
-            ✅ Following
-          {:else}
-            ➕ Follow
-          {/if}
-        </button>
-
-        <button class="follow-btn" on:click={startChat}>
-          💬 Send Message
-        </button>
-      {/if}
-
-      {#if member.info?.status?.toLowerCase() === "partner"}
-        <button class="book-btn" on:click={() => (showBooking = true)}>
-          📆 Book meeting
-        </button>
-      {/if}
     </div>
 
-    <!-- Правая колонка -->
-    <div class="profile-details">
-      {#if member.info?.bio}
-        <div class="info-block tall">
-          <h3>About</h3>
-          <p>{member.info.bio}</p>
-        </div>
-      {/if}
+    <!-- TABS -->
+    <div class="tabs">
+      <button class:active={tab === "about"} on:click={() => (tab = "about")}
+        >{$t('members.about')}</button
+      >
+      <button
+        class:active={tab === "interests"}
+        on:click={() => (tab = "interests")}>{$t('members.interests')}</button
+      >
+      <button
+        class:active={tab === "companies"}
+        on:click={() => (tab = "companies")}>{$t('members.companies')}</button
+      >
+      <button class:active={tab === "events"} on:click={() => (tab = "events")}
+        >{$t('members.events')}</button
+      >
+      <button
+        class:active={tab === "followers"}
+        on:click={() => (tab = "followers")}>{$t('members.followersTab')}</button
+      >
+      <button
+        class:active={tab === "following"}
+        on:click={() => (tab = "following")}>{$t('members.followingTab')}</button
+      >
+      <button
+        class:active={tab === "mutuals"}
+        on:click={() => (tab = "mutuals")}>Mutuals</button
+      >
+    </div>
 
-      <div class="info-block tall">
-        <h3>Events</h3>
+    <!-- LAYOUT -->
+    <div class="layout">
+      <!-- MAIN -->
+      <div class="main">
+        {#if tab === "about"}
+          <div class="card">
+            <div class="cardTitle">{$t('members.about')}</div>
+            <div class="text">
+              {#if member?.info?.bio}
+                {member.info.bio}
+              {:else}
+                No bio available.
+              {/if}
+            </div>
 
-        <div class="tabs-small">
-          <div
-            class="tab"
-            class:active={activeTab === "upcoming"}
-            on:click={() => (activeTab = "upcoming")}
-          >
-            Upcoming
+            <div class="subCard">
+              <div class="subHead">WORKS AT</div>
+              <div class="companyRow">
+                <div class="companyIcon">
+                  <iconify-icon icon="lucide:building-2" width="18"
+                  ></iconify-icon>
+                </div>
+                <div class="companyTxt">
+                  <div class="companyName">TechEvents Inc.</div>
+                  <div class="companyRole">CEO</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="langs">
+              <div class="langTitle">Languages</div>
+              <div class="langPill">
+                <iconify-icon icon="lucide:globe" width="14"></iconify-icon>
+                English
+              </div>
+            </div>
           </div>
+        {/if}
 
-          <div
-            class="tab"
-            class:active={activeTab === "visited"}
-            on:click={() => (activeTab = "visited")}
-          >
-            Visited
-          </div>
-        </div>
+        {#if tab === "events"}
+          <div class="card">
+            <div class="cardTitle">{$t('members.events')}</div>
 
-        <!-- Контент табов -->
-        {#if activeTab === "upcoming"}
-          {#if upcomingEvents.length > 0}
-            <ul class="events-list">
-              {#each upcomingEvents as ev}
-                <li class="event-card-line">
-                  <div class="e-left">
-                    <a href={`/events/${ev.id}`} class="e-title">{ev.title}</a>
-                    <span class="e-date">
-                      {new Date(ev.date).toLocaleDateString("ru-RU", {
-                        day: "2-digit",
-                        month: "2-digit",
+            <div class="blockTitle">Upcoming</div>
+            {#if upcomingEvents.length === 0}
+              <div class="muted">No upcoming events.</div>
+            {:else}
+              <div class="eventList">
+                {#each upcomingEvents as ev (ev.id)}
+                  <a class="ev" href={`/events/${ev.id}`}>
+                    <div class="evTitle">{ev.title}</div>
+                    <div class="evMeta">
+                      {new Date(ev.date).toLocaleDateString(getDateLocale(), {
+                        month: "short",
+                        day: "numeric",
                         year: "numeric",
                       })}
-                    </span>
-                  </div>
-
-                  <a href={`/events/${ev.id}`} class="e-btn">
-                    Перейти
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
+                      · {ev.location}
+                    </div>
                   </a>
-                </li>
-              {/each}
-            </ul>
-          {:else}
-            <p class="empty">Нет запланированных событий</p>
-          {/if}
-        {:else if visitedEvents.length > 0}
-          <ul class="events-list">
-            {#each visitedEvents as ev}
-              <li>
-                <a href={`/events/${ev.id}`}>{ev.title}</a>
-                <span class="date">
-                  {new Date(ev.date).toLocaleDateString("ru-RU")}
-                </span>
-              </li>
-            {/each}
-          </ul>
-        {:else}
-          <p class="empty">Пока не посещал события</p>
+                {/each}
+              </div>
+            {/if}
+
+            <div class="blockTitle" style="margin-top:16px;">Visited</div>
+            {#if visitedEvents.length === 0}
+              <div class="muted">No visited events.</div>
+            {:else}
+              <div class="eventList">
+                {#each visitedEvents as ev (ev.id)}
+                  <a class="ev" href={`/events/${ev.id}`}>
+                    <div class="evTitle">{ev.title}</div>
+                    <div class="evMeta">
+                      {new Date(ev.date).toLocaleDateString(getDateLocale(), {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      · {ev.location}
+                    </div>
+                  </a>
+                {/each}
+              </div>
+            {/if}
+
+            <div class="blockTitle" style="margin-top:16px;">Created</div>
+            {#if createdEvents.length === 0}
+              <div class="muted">No created events.</div>
+            {:else}
+              <div class="eventList">
+                {#each createdEvents as ev (ev.id)}
+                  <a class="ev" href={`/events/${ev.id}`}>
+                    <div class="evTitle">{ev.title}</div>
+                    <div class="evMeta">
+                      {new Date(ev.date).toLocaleDateString(getDateLocale(), {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      · {ev.location}
+                    </div>
+                  </a>
+                {/each}
+              </div>
+            {/if}
+          </div>
         {/if}
+
+        {#if tab !== "about" && tab !== "events"}
+          <div class="card">
+            <div class="cardTitle">{tab[0].toUpperCase() + tab.slice(1)}</div>
+            <div class="muted">This section is not connected yet.</div>
+          </div>
+        {/if}
+      </div>
+
+      <!-- SIDE -->
+      <div class="side">
+        <div class="sideCard purple">
+          <div class="sideTitle">
+            <iconify-icon icon="lucide:trophy" width="18"></iconify-icon>
+            Social Capital
+          </div>
+
+          <div class="bigNum">{socialCapital} <span>pts</span></div>
+
+          <div class="bar">
+            <div
+              class="fill"
+              style={`width:${Math.min(100, (socialCapital / 1000) * 100)}%`}
+            ></div>
+          </div>
+
+          <div class="hint">Top 15% in Community</div>
+        </div>
+
+        <div class="sideCard">
+          <div class="sideTitle">
+            <iconify-icon
+              icon="lucide:shield-check"
+              width="18"
+              style="color:#16a34a;"
+            ></iconify-icon>
+            Trust Score
+          </div>
+
+          <div class="trustRow">
+            <div class="ring">{trustScore}</div>
+            <div>
+              <div class="trustMain">Highly Trusted</div>
+              <div class="trustSub">Based on verified activity</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="proofTitle">SOCIAL PROOF</div>
+          <div class="proofRow">
+            <span>References</span><b>12</b>
+          </div>
+          <div class="proofRow">
+            <span>Achievements</span><b>5</b>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-{/if}
-{#if showBooking}
-  <BookingModal
-    {availability}
-    {member}
-    onClose={() => (showBooking = false)}
-    onBooked={selectSlot}
-  />
-{/if}
+</section>
+
+<ContextAssistant
+  bind:open={assistantOpen}
+  contextKey="member"
+  payload={{ member, followers, following, socialCapital, trustScore }}
+  title="Member Assistant"
+/>
 
 <style>
-  .event-card-line {
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 18px 60px;
+  }
+
+  /* TOP */
+  .top {
     background: #fff;
-    padding: 14px 20px;
-    border-radius: 14px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 22px;
     display: flex;
     justify-content: space-between;
+    gap: 18px;
     align-items: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    margin-bottom: 12px;
-    transition: 0.2s;
   }
 
-  .event-card-line:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
-  }
-
-  .e-left {
+  .left {
     display: flex;
-    flex-direction: column;
+    gap: 18px;
+    align-items: center;
+    min-width: 0;
   }
 
-  .e-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #0b3954;
-    text-decoration: none;
-    line-height: 1.2;
+  .avatarWrap {
+    position: relative;
+    width: 92px;
+    height: 92px;
+    flex: 0 0 auto;
+  }
+
+  .avatar {
+    width: 92px;
+    height: 92px;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 4px solid #fff;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+    background: #f1f5f9;
+    display: grid;
+    place-items: center;
+  }
+
+  .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .fallback {
+    font-weight: 900;
+    color: #0f172a;
+    font-size: 20px;
+  }
+
+  .onlineDot {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    right: 6px;
+    bottom: 6px;
+    border-radius: 999px;
+    background: #94a3b8;
+    border: 4px solid #fff;
+  }
+
+  .info {
+    min-width: 0;
+  }
+
+  .nameRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .name {
+    font-size: 26px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.02em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 380px; /* чтобы длинные названия красиво обрезались */
   }
 
-  .e-title:hover {
-    color: #0070f3;
-  }
-
-  .e-date {
-    font-size: 0.9rem;
-    color: #64748b;
-    margin-top: 2px;
-  }
-
-  .e-btn {
-    color: #ffffff;
-    text-decoration: none;
-    padding: 8px 18px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    letter-spacing: 0.2px;
+  .verified {
+    color: rgb(79 70 229);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    transition:
-      background 0.2s,
-      transform 0.15s;
-    white-space: nowrap;
   }
 
-  .e-btn:active {
-    transform: translateY(1px);
-  }
-
-  .e-btn svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .tabs-small {
-    display: flex;
-    gap: 24px;
-    border-bottom: 1px solid #2d2d2f;
-    margin-bottom: 16px;
-    padding-bottom: 4px;
-  }
-
-  .tab {
-    font-size: 15px;
-    color: #888;
-    cursor: pointer;
-    padding: 6px 0;
-    transition: 0.2s;
-    position: relative;
-  }
-
-  .tab:hover {
-    color: #000000;
-  }
-
-  .tab.active {
-    color: #888;
-    font-weight: 500;
-  }
-
-  .tab.active::after {
-    content: "";
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #0a84ff;
-    border-radius: 4px;
-  }
-
-  .events-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .events-list li {
-    padding: 10px 0;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .events-list li a {
-    color: #0a84ff;
-    text-decoration: none;
-  }
-
-  .events-list li a:hover {
-    text-decoration: underline;
-  }
-
-  .date {
-    color: #888;
+  .subtitle {
+    margin-top: 2px;
     font-size: 14px;
-  }
-
-  .empty {
-    color: #777;
-    font-size: 14px;
-    margin-top: 8px;
-  }
-
-  .followers-block {
-    display: flex;
-    gap: 1.5rem;
-    margin-top: 0.6rem;
-  }
-
-  .followers-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .followers-count {
     font-weight: 700;
-    font-size: 1.2rem;
-    color: #0b3954;
-    line-height: 1;
-  }
-
-  .followers-label {
-    font-size: 0.85rem;
     color: #64748b;
   }
-  .profile-layout {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 2rem;
-    max-width: 1100px;
-    margin: 2.5rem auto;
-    align-items: start;
-    padding: 0 1rem;
-  }
 
-  .profile-card {
-    background: #fff;
-    padding: 1.5rem;
-    border-radius: 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  }
-
-  .profile-header {
+  .meta {
+    margin-top: 10px;
     display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    color: #94a3b8;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .metaItem {
+    display: inline-flex;
     align-items: center;
-    gap: 1rem;
+    gap: 8px;
   }
 
-  .profile-photo {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-
-  .user-info h2 {
-    font-size: 1.3rem;
-    color: #0b3954;
-    margin: 0;
-  }
-
-  .badge {
-    background: #0070f3;
-    color: white;
-    padding: 0.25rem 0.6rem;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    margin-top: 0.2rem;
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #cbd5e1;
     display: inline-block;
   }
 
-  .divider {
-    height: 1px;
-    background: #e2e8f0;
-    margin: 1.2rem 0;
+  .stats {
+    margin-top: 12px;
+    display: flex;
+    gap: 28px;
+    font-weight: 900;
+    color: #0f172a;
   }
 
-  .profile-info {
-    color: #475569;
-    font-size: 0.9rem;
+  .stat .n {
+    color: #0f172a;
+  }
+
+  .actions {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 10px;
+    flex: 0 0 auto;
   }
 
-  .follow-btn {
-    background: #0ea5e9;
-    color: white;
-    font-size: 0.95rem;
-    font-weight: 500;
+  .btnFollow {
     border: none;
-    border-radius: 8px;
-    padding: 0.6rem 1rem;
-    margin-top: 1rem;
+    border-radius: 12px;
+    padding: 12px 18px;
+    background: #4f46e5;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     cursor: pointer;
-    transition: all 0.2s;
-    width: 100%;
+    transition: all 0.15s;
   }
 
-  .follow-btn:hover {
-    background: #0284c7;
+  .btnFollow:hover {
+    background: #4338ca;
+  }
+  .btnFollow.followed {
+    background: #e2e8f0;
+    color: #475569;
   }
 
-  .follow-btn:disabled {
-    opacity: 0.7;
+  .btnFollow:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
   }
 
-  .book-btn {
-    background: #0070f3;
-    color: white;
-    font-size: 0.95rem;
-    font-weight: 500;
-    border: none;
-    border-radius: 8px;
-    padding: 0.6rem 1rem;
-    margin-top: 0.6rem;
+  .actionRow {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .iconBtn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    color: #64748b;
     cursor: pointer;
-    transition: background 0.2s;
-    width: 100%;
+    transition: all 0.15s;
   }
 
-  .book-btn:hover {
-    background: #0059c9;
+  .iconBtn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  .metaItem.onlineNow {
+    color: #16a34a;
   }
 
-  /* Правая колонка */
-  .profile-details {
+  .metaItem.onlineNow .dot {
+    background: #22c55e;
+  }
+
+  /* TABS */
+  .tabs {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tabs button {
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.15s;
+  }
+
+  .tabs button:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .tabs button.active {
+    background: #4f46e5;
+    color: #fff;
+    border-color: #4f46e5;
+  }
+
+  /* LAYOUT */
+  .layout {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .main,
+  .side {
+    min-width: 0;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 18px;
+  }
+
+  .cardTitle {
+    font-weight: 900;
+    color: #0f172a;
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+
+  .text {
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+
+  .subCard {
+    margin-top: 16px;
+    background: #f8fafc;
+    border: 1px solid #eef2f7;
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .subHead {
+    color: #94a3b8;
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .companyRow {
+    margin-top: 10px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .companyIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(79, 70, 229, 0.12);
+    display: grid;
+    place-items: center;
+    color: rgb(79 70 229);
+    flex: 0 0 auto;
+  }
+
+  .companyName {
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .companyRole {
+    font-weight: 800;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .langs {
+    margin-top: 18px;
+  }
+
+  .langTitle {
+    font-weight: 900;
+    color: #0f172a;
+    margin-bottom: 10px;
+  }
+
+  .langPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-weight: 900;
+    color: #0f172a;
+    font-size: 12px;
+  }
+
+  /* SIDE CARDS */
+  .side {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 16px;
+    position: sticky;
+    top: 82px;
   }
 
-  .info-block {
+  .sideCard {
     background: #fff;
-    border-radius: 1rem;
-    padding: 1.2rem 1.5rem;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
-    min-height: 140px;
-    transition: transform 0.2s;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 18px;
   }
 
-  .info-block.tall {
-    min-height: 200px;
+  .sideCard.purple {
+    background: rgba(79, 70, 229, 0.06);
+    border-color: rgba(79, 70, 229, 0.18);
   }
 
-  .info-block:hover {
-    transform: translateY(-2px);
+  .sideTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 900;
+    color: #0f172a;
   }
 
-  .info-block h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #0b3954;
-    margin-bottom: 0.6rem;
+  .bigNum {
+    margin-top: 14px;
+    font-size: 42px;
+    font-weight: 900;
+    color: rgb(79 70 229);
+    line-height: 1;
   }
 
-  .info-block p,
-  .info-block ul {
-    font-size: 0.95rem;
-    color: #475569;
-    margin: 0;
+  .bigNum span {
+    font-size: 14px;
+    font-weight: 900;
+    color: #64748b;
+    margin-left: 6px;
   }
 
-  .info-block ul {
-    list-style: none;
-    padding-left: 0;
+  .bar {
+    margin-top: 12px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.06);
+    overflow: hidden;
   }
 
-  .info-block li {
-    margin: 0.3rem 0;
+  .fill {
+    height: 100%;
+    background: rgb(79 70 229);
+    border-radius: 999px;
   }
 
-  .info-block a {
-    color: #2563eb;
-    text-decoration: none;
+  .hint {
+    margin-top: 10px;
+    color: rgb(79 70 229);
+    font-weight: 900;
+    font-size: 12px;
   }
 
-  .info-block a:hover {
-    text-decoration: underline;
+  .trustRow {
+    margin-top: 14px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
   }
 
-  .empty {
+  .ring {
+    width: 54px;
+    height: 54px;
+    border-radius: 999px;
+    border: 4px solid #22c55e;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    color: #166534;
+    background: rgba(34, 197, 94, 0.08);
+    flex: 0 0 auto;
+  }
+
+  .trustMain {
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .trustSub {
+    font-weight: 800;
     color: #94a3b8;
+    font-size: 12px;
+    margin-top: 2px;
   }
 
-  @media (max-width: 900px) {
-    .profile-layout {
+  .divider {
+    margin: 16px 0;
+    height: 1px;
+    background: #eef2f7;
+  }
+
+  .proofTitle {
+    font-weight: 900;
+    color: #94a3b8;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .proofRow {
+    margin-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .muted {
+    color: #94a3b8;
+    font-weight: 800;
+  }
+
+  .blockTitle {
+    font-weight: 900;
+    color: #0f172a;
+    margin: 12px 0 10px;
+  }
+
+  .eventList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ev {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px;
+    text-decoration: none;
+    background: #fff;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .ev:hover {
+    border-color: rgba(79, 70, 229, 0.35);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  }
+
+  .evTitle {
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .evMeta {
+    margin-top: 4px;
+    color: #64748b;
+    font-weight: 800;
+    font-size: 12px;
+  }
+
+  @media (max-width: 980px) {
+    .top {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .actions {
+      width: 100%;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .layout {
       grid-template-columns: 1fr;
     }
 
-    .profile-card {
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .profile-details {
-      margin-top: 1.5rem;
-    }
-
-    .info-block {
-      min-height: 160px;
+    .side {
+      position: static;
     }
   }
 </style>

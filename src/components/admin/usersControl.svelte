@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { t } from "$lib/i18n";
+  import { getDateLocale } from "$lib/utils/dateLocale";
 
   type User = {
     id: string;
@@ -15,7 +17,11 @@
   let users: User[] = [];
   let loading = true;
 
-  const statusOptions = ["Member", "Resident", "Partner"];
+  const statusOptions = [
+    { value: "Member", key: "admin.users.statusMember" },
+    { value: "Resident", key: "admin.users.statusResident" },
+    { value: "Partner", key: "admin.users.statusPartner" },
+  ];
 
   // Track edited status per user
   let editedStatus: Record<string, string> = {};
@@ -57,7 +63,7 @@
       const data = await res.json();
 
       if (!res.ok) {
-        alert("Ошибка: " + (data.error || "Unknown error"));
+        alert(t.get('admin.users.error') + ": " + (data.error || t.get('admin.users.unknownError')));
         return;
       }
 
@@ -71,7 +77,7 @@
       delete editedStatus[userId];
     } catch (err) {
       console.error("Saving error:", err);
-      alert("Error saving status");
+      alert(t.get('admin.users.errorSavingStatus'));
     } finally {
       saving[userId] = false;
     }
@@ -79,15 +85,15 @@
 </script>
 
 {#if loading}
-  <p>Загрузка пользователей...</p>
+  <p>{$t('admin.users.loading')}</p>
 {:else}
   <table class="users-table">
     <thead>
       <tr>
-        <th>Имя</th>
-        <th>Email</th>
-        <th>Статус</th>
-        <th>Дата регистрации</th>
+        <th>{$t('admin.users.name')}</th>
+        <th>{$t('admin.users.email')}</th>
+        <th>{$t('admin.users.status')}</th>
+        <th>{$t('admin.users.registrationDate')}</th>
         <th></th>
       </tr>
     </thead>
@@ -107,12 +113,12 @@
               }
             >
               {#each statusOptions as option}
-                <option value={option}>{option}</option>
+                <option value={option.value}>{$t(option.key)}</option>
               {/each}
             </select>
           </td>
 
-          <td>{new Date(user.createdAt).toLocaleDateString("ru-RU")}</td>
+          <td>{new Date(user.createdAt).toLocaleDateString(getDateLocale())}</td>
 
           <td>
             {#if editedStatus[user.id]}
@@ -121,7 +127,7 @@
                 on:click={() => saveStatus(user.id)}
                 disabled={saving[user.id]}
               >
-                {saving[user.id] ? "Saving..." : "Save"}
+                {saving[user.id] ? $t('admin.users.saving') : $t('admin.users.save')}
               </button>
             {/if}
           </td>

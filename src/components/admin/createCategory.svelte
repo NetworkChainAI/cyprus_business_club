@@ -1,11 +1,13 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+
   let name = "";
   let success = false;
   let error = "";
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      error = "Please enter category name.";
+      error = t.get('admin.category.enterName');
       return;
     }
     error = "";
@@ -22,23 +24,23 @@
       name = "";
     } else {
       const data = await res.json();
-      error = data.error || "Failed to create category";
+      error = data.error || t.get('admin.category.createFailed');
     }
   };
 </script>
 
 <section class="category-create">
-  <h1>🧩 Create Category</h1>
+  <h1>{$t('admin.category.title')}</h1>
 
   <div class="form-field">
-    <label>Category Name</label>
-    <input type="text" bind:value={name} placeholder="e.g. Conferences" />
+    <label>{$t('admin.category.nameLabel')}</label>
+    <input type="text" bind:value={name} placeholder={$t('admin.category.namePlaceholder')} />
   </div>
 
-  <button on:click={handleCreate} class="btn primary">Create</button>
+  <button on:click={handleCreate} class="btn primary">{$t('admin.category.create')}</button>
 
   {#if success}
-    <p class="success">✅ Category created successfully!</p>
+    <p class="success">{$t('admin.category.success')}</p>
   {/if}
   {#if error}
     <p class="error">{error}</p>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { photoSrc } from "$lib/utils/photo";
+  import { t } from "$lib/i18n";
 
   export let member: any;
 
@@ -17,7 +18,7 @@
     "https://api.dicebear.com/7.x/initials/svg?seed=" +
     encodeURIComponent(name(member));
 
-  $: avatar = photoSrc(member?.info?.photo) ?? fallback();
+  $: avatar = photoSrc(member?.info?.photo, 128) ?? fallback();
 </script>
 
 <a href={`/members/${member.id}`} class="member-card">
@@ -26,6 +27,7 @@
     alt="Member photo"
     class="avatar"
     loading="lazy"
+    decoding="async"
     referrerpolicy="no-referrer"
   />
 
@@ -35,32 +37,30 @@
     <div class="meta-row">
       <span class="badge">{role(member)}</span>
       <span class="followers-pill">
-        {member._count?.followers ?? 0} followers
+        {member._count?.followers ?? 0} {$t('members.followers')}
       </span>
     </div>
   </div>
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  {#if isLoggedIn}
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="follow-action" on:click={stopCardClick}>
-      <button
-        type="button"
-        class="follow-chip {isFollowing ? 'following' : ''}"
-        disabled={isLoading}
-        on:click={() => onToggle(member.id)}
-        title={isFollowing ? "Unfollow" : "Follow"}
-      >
-        {#if isLoading}
-          …
-        {:else if isFollowing}
-          ✓ Following
-        {:else}
-          + Follow
-        {/if}
-      </button>
-    </div>
-  {/if}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div class="follow-action" on:click={stopCardClick}>
+    <button
+      type="button"
+      class="follow-chip {isFollowing ? 'following' : ''}"
+      disabled={isLoading}
+      on:click={() => isLoggedIn ? onToggle(member.id) : (window.location.href = "/login")}
+      title={isFollowing ? "Unfollow" : "Follow"}
+    >
+      {#if isLoading}
+        …
+      {:else if isFollowing}
+        ✓ {$t('members.following')}
+      {:else}
+        + {$t('members.follow')}
+      {/if}
+    </button>
+  </div>
 
   <slot name="hover" />
 </a>

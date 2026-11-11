@@ -1,0 +1,267 @@
+{
+  "nav": {
+    "events": "Events",
+    "partners": "Partners",
+    "communities": "Communities",
+    "people": "People",
+    "calendar": "Calendar",
+    "referral": "Referral",
+    "chat": "Chat",
+    "wallet": "Wallet",
+    "admin": "Admin"
+  },
+  "btn": {
+    "login": "Log In",
+    "register": "Register",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "viewAll": "View all",
+    "learnMore": "Learn more",
+    "getStarted": "Get started",
+    "createAccount": "Create account",
+    "loading": "Loading...",
+    "follow": "Follow",
+    "following": "Following",
+    "unfollow": "Unfollow",
+    "edit": "Edit",
+    "delete": "Delete",
+    "submit": "Submit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "send": "Send",
+    "share": "Share",
+    "copy": "Copy",
+    "copied": "Copied!"
+  },
+  "footer": {
+    "brand": "NetworkChainAI",
+    "tagline": "The first social platform backed by reputation and blockchain. Connect, attend real-world events, and build your social capital.",
+    "discover": "DISCOVER",
+    "myHub": "MY HUB",
+    "platform": "PLATFORM",
+    "profile": "Profile",
+    "signIn": "Sign In",
+    "copyright": "© 2026 NetworkChainAI. All rights reserved."
+  },
+  "drawer": {
+    "title": "Menu",
+    "toggle": "Toggle menu",
+    "close": "Close menu"
+  },
+  "filter": {
+    "all": "All",
+    "category": "Category",
+    "search": "Search...",
+    "clearFilters": "Clear filters",
+    "noResults": "No results found",
+    "tryAdjusting": "Try adjusting your search or filters",
+    "resetAll": "Reset all filters",
+    "showMore": "Show more",
+    "showLess": "Show less"
+  },
+  "sort": {
+    "sortBy": "Sort by:",
+    "soonest": "Soonest",
+    "latest": "Latest",
+    "mostFollowed": "Most Followed",
+    "nameAsc": "Name (A-Z)"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "min ago",
+    "hoursAgo": "h ago",
+    "daysAgo": "d ago",
+    "online": "Online now",
+    "lastSeen": "Last seen {{time}} ago"
+  },
+  "price": {
+    "free": "Free",
+    "paid": "Paid"
+  },
+  "privacy": {
+    "public": "Public",
+    "private": "Private"
+  },
+  "stats": {
+    "followers": "followers",
+    "following": "following",
+    "members": "members",
+    "events": "events",
+    "going": "going"
+  },
+  "aiAssistant": "AI Assistant",
+  "error": {
+    "generic": "Something went wrong.",
+    "tryAgain": "Please try again.",
+    "notFound": "Page not found",
+    "goHome": "Go to homepage"
+  },
+  "badge": {
+    "expert": "Expert",
+    "featured": "Featured",
+    "company": "Company",
+    "personal": "Personal"
+  },
+  "referral": {
+    "title": "Referral Program",
+    "subtitle": "Share your link or code — your friend signs up and you both get bonuses.",
+    "invited": "INVITED",
+    "loginTitle": "Log in to access your referral program",
+    "loginSub": "Share your unique link, invite friends and earn bonuses together",
+    "logIn": "Log In",
+    "referralLink": "Referral link",
+    "referralCode": "Referral code",
+    "copy": "Copy",
+    "copied": "Copied",
+    "share": "Share",
+    "myReferrals": "My referrals",
+    "noReferralsYet": "No referrals yet",
+    "shareInviteFirst": "Share your link and invite your first friend",
+    "qrCode": "QR Code",
+    "qrHint": "Scan with camera to open the referral link"
+  },
+  "ai": {
+    "assistant": "AI Assistant",
+    "askAnything": "Ask anything about this page",
+    "askQuestion": "Ask a question...",
+    "clearChat": "Clear chat",
+    "close": "Close",
+    "aiChat": "AI Chat",
+    "networkError": "Network error. Please try again.",
+    "fallbackError": "Something went wrong. Try again.",
+    "apply": "Apply",
+    "applied": "Applied",
+    "askAi": "Ask AI"
+  },
+  "shareModal": {
+    "share": "Share",
+    "copyLink": "Copy Link",
+    "copied": "Copied!"
+  },
+  "user": {
+    "myProfile": "My Profile",
+    "myEvents": "My Events",
+    "achievements": "Achievements",
+    "settings": "Settings",
+    "logOut": "Log out",
+    "logout": "Log out",
+    "loggingOut": "Logging out…",
+    "logoutError": "Failed to log out. Try again.",
+    "signIn": "Sign in",
+    "member": "Member",
+    "highlyTrusted": "Highly Trusted",
+    "trusted": "Trusted",
+    "verified": "Verified",
+    "new": "New"
+  },
+  "about": {
+    "title": "About NetworkChainAI",
+    "intro": "At <strong>NetworkChainAI</strong>, we bring the business community together. Whether you're an industry leader, an aspiring entrepreneur, or simply looking for new connections — our platform is your gateway to the most exciting events and opportunities.",
+    "whyTitle": "Why We Exist",
+    "whyText": "Networking is transforming industries and driving groundbreaking innovations. We believe in connecting people who share a passion for business by providing a comprehensive platform to discover, explore, and engage with the latest events, workshops, and meetups.",
+    "offerTitle": "What We Offer",
+    "offer1": "<strong>Global Coverage:</strong> Find events and partners from around the world.",
+    "offer2": "<strong>Curated for Excellence:</strong> Only the most relevant and impactful events make it to our platform.",
+    "offer3": "<strong>Tools for Growth:</strong> Stay updated, network with industry leaders, and take your business to the next level."
+  },
+  "booking": {
+    "title": "Book meeting with",
+    "noAvailability": "No availability.",
+    "select": "Select",
+    "chooseStart": "Choose start time",
+    "chooseEnd": "Choose end time",
+    "start": "Start",
+    "booking": "Booking...",
+    "error": "Error creating meeting",
+    "unexpectedError": "Unexpected error"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "earned": "Earned",
+    "of": "of",
+    "oneOff": "One-time",
+    "progress": "Progress",
+    "seasonal": "Seasonal",
+    "notFound": "Achievement not found",
+    "rarity": "Rarity",
+    "rarityDesc": "of users earned this achievement",
+    "levels": "Levels",
+    "level": "Level",
+    "target": "Target",
+    "starterLevel": "Starter level",
+    "nextMilestone": "Next milestone",
+    "yourProgress": "Your progress",
+    "levelEarned": "earned",
+    "noProgress": "No progress yet for this achievement."
+  },
+  "availability": {
+    "title": "Availability",
+    "accessDenied": "Only partners can manage availability.",
+    "createSlot": "Create slot for",
+    "start": "Start",
+    "end": "End",
+    "create": "Create",
+    "yourSlots": "Your slots:"
+  },
+  "paypal": {
+    "declined": "Payment was declined. Please try another payment method.",
+    "insufficientFunds": "Insufficient funds. Please choose another payment method.",
+    "refused": "Transaction was refused. Please try another card or method.",
+    "actionRequired": "Additional confirmation is required. Please try again.",
+    "failed": "Payment could not be completed. Please try again.",
+    "unavailable": "PayPal is not available right now.",
+    "error": "PayPal error occurred. Please try again.",
+    "cancelled": "Payment was cancelled.",
+    "initFailed": "Failed to initialize PayPal payment."
+  },
+  "searchDropdown": {
+    "select": "Select...",
+    "search": "Search...",
+    "noResults": "No results"
+  },
+  "journal": {
+    "hidePages": "Hide pages",
+    "showPages": "Show pages",
+    "page": "Page",
+    "loadingThumbs": "Preparing page previews..."
+  },
+  "exchange": {
+    "address": "Address",
+    "memo": "memo",
+    "ifExist": "If exist",
+    "searchCurrency": "Search currency...",
+    "send": "Send",
+    "depositAddress": "Deposit Address",
+    "sendOnly": "send only",
+    "network": "network",
+    "cancelOrder": "Cancel Order",
+    "howToSend": "How to send",
+    "step1": "Open your wallet/exchange",
+    "step2": "Select Withdraw / Send",
+    "step3": "Choose",
+    "step4": "Select network",
+    "step5": "Paste the address above",
+    "step6": "Confirm transaction",
+    "loading": "loading...",
+    "error": "error occurred",
+    "empty": "empty",
+    "amount": "Amount",
+    "from": "From",
+    "to": "To",
+    "create": "Create",
+    "transactionSuccessful": "Transaction Successful",
+    "orderCompleted": "Your order has been completed",
+    "viewExchanges": "You can view all your exchanges anytime on the",
+    "profilePage": "profile",
+    "page": "page.",
+    "goHome": "Go Home",
+    "sendOnlyWarning": "Send only {{currency}} on {{chain}} network.",
+    "on": "on"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "fallback": "Please try again later.",
+    "goHome": "Go Home"
+  }
+}

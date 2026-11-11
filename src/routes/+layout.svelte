@@ -1,35 +1,37 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import Header from "../components/Header.svelte";
+  import Footer from "../components/Footer.svelte";
   import { page } from "$app/stores";
-  import Header from "../components/header.svelte";
-  import Footer from "../components/footer.svelte";
-
   import { QueryClient, QueryClientProvider } from "@tanstack/svelte-query";
   const queryClient = new QueryClient();
 
-  $: isChatRoute = $page.url.pathname.startsWith("/chat");
+  $: strippedPath = $page.url.pathname.replace(/^\/[a-z]{2}(\/|$)/, "/") || "/";
+  $: isChatRoute = strippedPath.startsWith("/chat");
 
   onMount(() => {
-    const interval = setInterval(async () => {
-      try {
-        await fetch("/api/user/online", { method: "POST" });
-      } catch (err) {
-        console.warn("⚠️ Failed to update online status:", err);
+    function ping() {
+      if (document.visibilityState === "visible") {
+        fetch("/api/user/online", { method: "POST" }).catch(() => {});
       }
-    }, 30000);
+    }
 
-    fetch("/api/user/online", { method: "POST" });
+    ping(); // immediate on load
 
-    window.addEventListener("beforeunload", () => {
-      navigator.sendBeacon("/api/user/online");
-    });
+    const interval = setInterval(ping, 30000);
 
-    return () => clearInterval(interval);
+    // Re-ping when user switches back to this tab
+    document.addEventListener("visibilitychange", ping);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", ping);
+    };
   });
 </script>
 
 <div class="layout-wrapper">
-    <Header />
+  <Header />
 
   <QueryClientProvider client={queryClient}>
     <main class="app-main">
@@ -52,6 +54,6 @@
   main.app-main {
     flex: 1;
     position: relative;
-    overflow: hidden;
+    overflow-x: clip;
   }
 </style>

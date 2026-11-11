@@ -1,0 +1,123 @@
+{
+  "title": "Events",
+  "subtitle": "Discover and join community events",
+  "search": "Search events...",
+  "sort": {
+    "soonest": "Soonest",
+    "latest": "Latest"
+  },
+  "adminPanel": "Admin Panel",
+  "filter": {
+    "category": "Category",
+    "all": "All",
+    "date": "Date",
+    "today": "Today",
+    "thisWeek": "This week",
+    "price": "Price",
+    "free": "Free",
+    "paid": "Paid",
+    "clear": "Clear filters",
+    "resetAll": "Reset all filters",
+    "less": "Less"
+  },
+  "results": {
+    "event": "event",
+    "events": "events"
+  },
+  "card": {
+    "going": "Going",
+    "goingCount": "going"
+  },
+  "empty": {
+    "title": "No events found",
+    "subtitle": "Try adjusting your search or filters"
+  },
+  "detail": {
+    "about": "About",
+    "agenda": "Agenda",
+    "location": "Location",
+    "organizer": "Organizer",
+    "speakers": "Speakers",
+    "sponsors": "Sponsors",
+    "participants": "Participants",
+    "similarEvents": "Similar Events",
+    "register": "Register",
+    "registered": "Registered",
+    "share": "Share",
+    "date": "Date & Time",
+    "price": "Price",
+    "free": "Free",
+    "askAi": "Ask AI about event",
+    "aiAssistantTitle": "Event Assistant",
+    "eventFallback": "Event",
+    "userFallback": "User",
+    "speakerFallback": "Speaker",
+    "sponsorFallback": "Sponsor",
+    "sponsorLabel": "Sponsor",
+    "hostedBy": "Hosted by",
+    "entityCommunity": "Community",
+    "entityPersonalBrand": "Personal brand",
+    "entityCompany": "Company",
+    "eventManager": "Event manager",
+    "openInMaps": "Open in Maps",
+    "showLess": "Show less",
+    "showAllParticipants": "Show all participants",
+    "loginFirst": "Log in first",
+    "eventEnded": "Event ended",
+    "youAreRegistered": "You are registered",
+    "buyTicket": "Buy ticket",
+    "registerNow": "Register Now",
+    "openChat": "Open chat",
+    "registerToChat": "Register to access chat",
+    "bookmark": "Bookmark"
+  },
+  "pay": {
+    "completePayment": "Complete payment",
+    "total": "Total",
+    "paymentSuccessful": "Payment successful",
+    "card": "Card",
+    "enterOtpCode": "Enter the 6-digit confirmation code",
+    "paymentFailed": "Payment failed",
+    "paymentError": "Payment error. Please try again.",
+    "failedSession": "Failed to create payment session.",
+    "registrationFailed": "Registration failed after payment.",
+    "walletRequired": "Wallet required",
+    "walletRequiredDesc": "Create a custody wallet to pay with USDT.",
+    "createWallet": "Create Wallet",
+    "sessionExpired": "Session expired",
+    "sessionExpiredDesc": "Please reconnect your custody wallet.",
+    "reconnectWallet": "Reconnect Wallet",
+    "checkingWallet": "Checking wallet...",
+    "priceInUsdt": "Price in USDT",
+    "yourBalance": "Your balance",
+    "insufficientBalance": "Insufficient balance. Need",
+    "confirmationCode": "Confirmation code (Google Authenticator)",
+    "processing": "Processing...",
+    "payWithUsdt": "Pay with USDT",
+    "redirectingStripe": "Redirecting to Stripe...",
+    "payWithCard": "Pay with Card",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "share": {
+    "title": "Share Event",
+    "copied": "Copied!",
+    "copyLink": "Copy Link"
+  },
+  "preview": {
+    "loadError": "Failed to load events"
+  },
+  "create": {
+    "title": "Create Event",
+    "name": "Event name",
+    "description": "Description",
+    "date": "Date",
+    "time": "Time",
+    "location": "Location",
+    "price": "Price",
+    "category": "Category",
+    "photo": "Photo",
+    "submit": "Create Event",
+    "submitting": "Creating..."
+  }
+}

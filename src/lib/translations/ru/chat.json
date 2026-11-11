@@ -1,0 +1,26 @@
+{
+  "tabs": {
+    "dm": "Личные",
+    "event": "Событие"
+  },
+  "search": "Поиск чатов...",
+  "noChats": "Нет чатов",
+  "typeMessage": "Введите сообщение...",
+  "send": "Отправить",
+  "online": "В сети",
+  "lastSeen": "Был(а)",
+  "ago": "назад",
+  "today": "Сегодня",
+  "yesterday": "Вчера",
+  "file": "Файл",
+  "photo": "Фото",
+  "selectChat": "Выберите чат, чтобы начать общение",
+  "selectChatHint": "Выберите беседу из списка слева",
+  "noPersonalChats": "Личных чатов пока нет",
+  "noEventChats": "Чатов событий пока нет",
+  "loadingMessages": "Загрузка...",
+  "noMessagesYet": "Сообщений пока нет",
+  "newMessage": "Новое сообщение",
+  "messages": "Сообщения",
+  "noMessages": "Нет сообщений"
+}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { t } from "$lib/i18n";
 
   let loading = true;
   let error: string | null = null;
@@ -15,7 +16,7 @@
     try {
       const res = await fetch("/api/custody/secret", {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers: { Accept: "application/json" }
       });
 
       const data = await res.json();
@@ -38,7 +39,7 @@
     try {
       await navigator.clipboard.writeText(secret);
       copied = true;
-      setTimeout(() => (copied = false), 2000);
+      setTimeout(() => (copied = false), 1800);
     } catch {
       copied = false;
     }
@@ -49,195 +50,248 @@
   });
 </script>
 
-<div class="secret-card">
+<div class="secretCard">
+  <div class="sTop">
+    <div class="sTitle">
+      <iconify-icon icon="lucide:key-round" width="18" style="color:#4f46e5"></iconify-icon>
+      {$t('wallet.secret.title')}
+    </div>
+    <button class="sReload" type="button" on:click={loadSecret} aria-label="Reload secret">
+      <iconify-icon icon="lucide:refresh-cw" width="16"></iconify-icon>
+    </button>
+  </div>
+
   {#if loading}
-    <div class="state muted">Загрузка секрета...</div>
+    <div class="state muted">{$t('wallet.secret.loading')}</div>
   {:else if error}
-    <div class="state error">⚠️ {error}</div>
+    <div class="state errorState">{error}</div>
   {:else if secret}
-    <div class="secret-box">
-      <div class="secret-line">
-        <code class="secret-code">
+    <div class="secretBox">
+      <div class="secretLine">
+        <code class="secretCode" title={revealed ? secret : ""}>
           {#if revealed}
             {secret}
           {:else}
-            {"•".repeat(Math.min(secret.length, 40))}
+            {"•".repeat(Math.min(secret.length, 46))}
           {/if}
         </code>
 
         <button
-          class="icon-btn"
+          class="iconBtn"
+          type="button"
           aria-label="Toggle secret visibility"
           on:click={() => (revealed = !revealed)}
         >
-          {#if revealed}
-            <ion-icon name="eye-off-outline"></ion-icon>
-          {:else}
-            <ion-icon name="eye-outline"></ion-icon>
-          {/if}
+          <iconify-icon icon={revealed ? "lucide:eye-off" : "lucide:eye"} width="16"></iconify-icon>
         </button>
 
-        <!-- КОПИЯ -->
-        <button class="icon-btn" on:click={copySecret} aria-label="Copy secret">
-          <ion-icon name={copied ? "checkmark-done-outline" : "copy-outline"} />
+        <button class="iconBtn" type="button" on:click={copySecret} aria-label="Copy secret">
+          <iconify-icon icon={copied ? "lucide:check-check" : "lucide:copy"} width="16"></iconify-icon>
         </button>
       </div>
 
-      <!-- КНОПКИ РАСШИРЕНИЯ -->
-      <div class="extension-btn-group">
+      <div class="linksRow">
         <a
-          class="extension-btn"
+          class="linkBtn"
           href="https://chromewebstore.google.com/detail/%D0%B0%D1%83%D1%82%D0%B5%D0%BD%D1%82%D0%B8%D1%84%D0%B8%D0%BA%D0%B0%D1%82%D0%BE%D1%80/bhghoamapcdpbohphigoooaddinpkbai"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Скачать Расширение
+          <iconify-icon icon="lucide:download" width="14"></iconify-icon>
+          {$t('wallet.secret.getAuthenticator')}
         </a>
 
         <a
-          class="extension-btn secondary"
+          class="linkBtn secondary"
           href="https://authenticator.cc/docs/en/quickstart"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Инструкция
+          <iconify-icon icon="lucide:book-open" width="14"></iconify-icon>
+          {$t('wallet.secret.setupGuide')}
         </a>
       </div>
 
-      <p class="hint">Не делитесь этим ключом. Он даёт доступ к кошельку.</p>
+      <div class="warn">
+        <iconify-icon icon="lucide:alert-triangle" width="14" style="flex-shrink:0;margin-top:1px"></iconify-icon>
+        <span>{$t('wallet.secret.warning')}</span>
+      </div>
     </div>
   {:else}
-    <div class="state muted">Секрет пустой.</div>
+    <div class="state muted">{$t('wallet.secret.empty')}</div>
   {/if}
 </div>
 
 <style>
-  .secret-card {
-    background: #ffffff;
-    border: 1px solid #e6edf3;
-    border-radius: 14px;
-    padding: 14px;
+  .secretCard {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 18px;
     width: 100%;
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+    min-width: 0;
   }
 
-  .title-row {
-    margin-bottom: 10px;
+  .sTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
   }
 
-  h3 {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 700;
+  .sTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 900;
     color: #0f172a;
-    letter-spacing: 0.2px;
+    min-width: 0;
+  }
+
+  .sReload {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex: 0 0 auto;
+  }
+
+  .sReload:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
   }
 
   .state {
     padding: 10px 12px;
-    border-radius: 10px;
-    font-size: 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 900;
   }
 
   .muted {
     color: #64748b;
     background: #f8fafc;
-    border: 1px dashed #e2e8f0;
+    border: 1px dashed #cbd5e1;
   }
 
-  .error {
-    color: #991b1b;
-    background: #fff5f5;
-    border: 1px solid #fecaca;
+  .errorState {
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.18);
   }
 
-  .secret-box {
+  .secretBox {
     display: grid;
-    gap: 10px;
+    gap: 12px;
   }
 
-  .secret-line {
+  .secretLine {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: #f9fbfd;
-    border: 1px solid #e6edf3;
-    border-radius: 10px;
-    padding: 10px 12px;
-    overflow-x: auto;
-  }
-
-  .secret-code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-      "Liberation Mono";
-    font-size: 16px;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    color: #0f172a;
-  }
-
-  .icon-btn {
-    background: none;
-    border: none;
-    color: #000000;
-    cursor: pointer;
-    padding: 6px;
-    display: flex;
-    align-items: center;
-    transition:
-      color 0.2s,
-      transform 0.15s;
-    font-size: 1.3rem;
-    border-radius: 6px;
-    flex-shrink: 0;
-  }
-
-  .icon-btn:hover {
-    color: #0000007c;
-  }
-
-  .icon-btn ion-icon {
-    font-size: 1.35rem;
-  }
-
-  /* Кнопки расширения */
-  .extension-btn-group {
-    display: flex;
     gap: 8px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .secretCode {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .iconBtn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex: 0 0 auto;
+  }
+
+  .iconBtn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .linksRow {
+    display: flex;
+    gap: 10px;
     flex-wrap: wrap;
   }
 
-  .extension-btn {
+  .linkBtn {
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 10px;
     display: inline-flex;
     align-items: center;
+    gap: 6px;
     justify-content: center;
-
-    padding: 7px 12px;
-    font-size: 13px;
-    font-weight: 700;
-    border-radius: 10px;
-
-    border: 1px solid #000000;
-    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    background: #fff;
     color: #0f172a;
-    text-decoration: none;
-
-    transition: 0.15s;
-  }
-
-  .extension-btn.secondary {
-    background: #f8fafc;
-  }
-
-  .extension-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
-    background: #f8fafc;
-  }
-
-  .hint {
-    margin: 2px 0 0;
+    font-weight: 900;
     font-size: 12px;
-    color: #64748b;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+
+  .linkBtn.secondary {
+    background: #f8fafc;
+  }
+
+  .linkBtn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.18);
+    color: #92400e;
+    font-weight: 800;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 640px) {
+    .secretCard {
+      padding: 14px;
+      border-radius: 16px;
+    }
+
+    .secretLine {
+      padding: 10px;
+    }
   }
 </style>

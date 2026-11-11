@@ -1,10 +1,14 @@
 import type { RequestHandler } from "@sveltejs/kit";
 import prisma from "$lib/prisma";
 import { verifyJwt } from "$lib/jwt";
+import { awardSocialCapital, recalcTrustScore } from "$lib/reputation";
+import { createNotification } from "$lib/services/notifications";
+
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 import type { Prisma } from "@prisma/client";
+import { validateFile, sanitizeFileName } from "$lib/server/security";
 
 type AgendaItem = {
   index: number;
@@ -81,6 +85,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
     const categories = formData.getAll("categories").map(String).filter(Boolean);
 
+    const communityId = String(formData.get("communityId") ?? "").trim() || null;
+    const brandId = String(formData.get("brandId") ?? "").trim() || null;
+
     let agendaJson: Prisma.InputJsonValue | undefined = undefined;
     const agendaRaw = formData.get("agenda");
     if (agendaRaw != null && String(agendaRaw).trim()) {
@@ -102,6 +109,81 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       return new Response(JSON.stringify({ error: "Invalid date" }), { status: 400 });
     }
 
+    // Validate ownership of community/brand
+    if (communityId) {
+      const community = await prisma.community.findFirst({
+        where: { id: communityId, owners: { some: { id: payload.uid } } },
+        select: { id: true },
+      });
+      if (!community) {
+        return new Response(JSON.stringify({ error: "You are not an owner of this community" }), { status: 403 });
+      }
+    }
+
+    if (brandId) {
+      const brand = await prisma.brand.findFirst({
+        where: { id: brandId, ownerId: payload.uid, status: "ACTIVE" },
+        select: { id: true },
+      });
+      if (!brand) {
+        return new Response(JSON.stringify({ error: "You are not an owner of this brand" }), { status: 403 });
+      }
+    }
+
+    // Parse sponsors & speakers JSON
+    let sponsorsData: Array<{ brandId?: string; name?: string; logoUrl?: string; hasLogo?: boolean }> = [];
+    let speakersData: Array<{ userId?: string; name?: string; email?: string; photoUrl?: string; title?: string; hasPhoto?: boolean }> = [];
+
+    const sponsorsRaw = formData.get("sponsors");
+    if (sponsorsRaw && String(sponsorsRaw).trim()) {
+      try {
+        sponsorsData = JSON.parse(String(sponsorsRaw));
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid sponsors JSON" }), { status: 400 });
+      }
+    }
+
+    const speakersRaw = formData.get("speakers");
+    if (speakersRaw && String(speakersRaw).trim()) {
+      try {
+        speakersData = JSON.parse(String(speakersRaw));
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid speakers JSON" }), { status: 400 });
+      }
+    }
+
+    // Process sponsor logo files
+    for (let i = 0; i < sponsorsData.length; i++) {
+      const logoFile = formData.get(`sponsor_logo_${i}`) as File | null;
+      if (logoFile && logoFile.size > 0) {
+        const fileErr = validateFile(logoFile, "image");
+        if (fileErr) return new Response(JSON.stringify({ error: `Sponsor logo: ${fileErr}` }), { status: 400 });
+        const bytes = Buffer.from(await logoFile.arrayBuffer());
+        const safeName = sanitizeFileName(logoFile.name);
+        const fileName = `${randomUUID()}-${safeName}`;
+        const uploadDir = path.join(process.cwd(), "static", "uploads", "brands");
+        fs.mkdirSync(uploadDir, { recursive: true });
+        fs.writeFileSync(path.join(uploadDir, fileName), bytes);
+        sponsorsData[i].logoUrl = `/uploads/brands/${fileName}`;
+      }
+    }
+
+    // Process speaker photo files
+    for (let i = 0; i < speakersData.length; i++) {
+      const photoFile = formData.get(`speaker_photo_${i}`) as File | null;
+      if (photoFile && photoFile.size > 0) {
+        const fileErr = validateFile(photoFile, "image");
+        if (fileErr) return new Response(JSON.stringify({ error: `Speaker photo: ${fileErr}` }), { status: 400 });
+        const bytes = Buffer.from(await photoFile.arrayBuffer());
+        const safeName = sanitizeFileName(photoFile.name);
+        const fileName = `${randomUUID()}-${safeName}`;
+        const uploadDir = path.join(process.cwd(), "static", "uploads", "events");
+        fs.mkdirSync(uploadDir, { recursive: true });
+        fs.writeFileSync(path.join(uploadDir, fileName), bytes);
+        speakersData[i].photoUrl = `/uploads/events/${fileName}`;
+      }
+    }
+
     const photoFile = formData.get("photo") as File | null;
     const documentFile = formData.get("document") as File | null;
 
@@ -109,8 +191,11 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     let documentPath: string | null = null;
 
     if (photoFile && photoFile.size > 0) {
+      const fileErr = validateFile(photoFile, "image");
+      if (fileErr) return new Response(JSON.stringify({ error: `Event photo: ${fileErr}` }), { status: 400 });
       const bytes = Buffer.from(await photoFile.arrayBuffer());
-      const fileName = `${randomUUID()}-${photoFile.name}`;
+      const safeName = sanitizeFileName(photoFile.name);
+      const fileName = `${randomUUID()}-${safeName}`;
       const uploadDir = path.join(process.cwd(), "static", "uploads", "events");
       fs.mkdirSync(uploadDir, { recursive: true });
       fs.writeFileSync(path.join(uploadDir, fileName), bytes);
@@ -118,8 +203,11 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     }
 
     if (documentFile && documentFile.size > 0) {
+      const fileErr = validateFile(documentFile, "document");
+      if (fileErr) return new Response(JSON.stringify({ error: `Document: ${fileErr}` }), { status: 400 });
       const bytes = Buffer.from(await documentFile.arrayBuffer());
-      const fileName = `${randomUUID()}-${documentFile.name}`;
+      const safeName = sanitizeFileName(documentFile.name);
+      const fileName = `${randomUUID()}-${safeName}`;
       const uploadDir = path.join(process.cwd(), "static", "uploads", "docs");
       fs.mkdirSync(uploadDir, { recursive: true });
       fs.writeFileSync(path.join(uploadDir, fileName), bytes);
@@ -144,8 +232,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
           organizerId: payload.uid,
           latitude,
           longitude,
+          communityId,
+          brandId,
 
-          // ✅ привязка к чату
           chatId: chat.id,
 
           ...(agendaJson !== undefined ? { agenda: agendaJson } : {}),
@@ -166,8 +255,59 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         }
       });
 
+      // Create sponsors
+      if (sponsorsData.length > 0) {
+        await tx.eventSponsor.createMany({
+          data: sponsorsData.map((s, i) => ({
+            eventId: event.id,
+            brandId: s.brandId || null,
+            name: s.brandId ? null : (s.name || null),
+            logoUrl: s.brandId ? null : (s.logoUrl || null),
+            order: i
+          }))
+        });
+      }
+
+      // Create speakers
+      if (speakersData.length > 0) {
+        await tx.eventSpeaker.createMany({
+          data: speakersData.map((s, i) => ({
+            eventId: event.id,
+            userId: s.userId || null,
+            name: s.userId ? null : (s.name || null),
+            email: s.userId ? null : (s.email || null),
+            photoUrl: s.userId ? null : (s.photoUrl || null),
+            title: s.title || null,
+            order: i
+          }))
+        });
+      }
+
       return { chat, event };
     });
+
+    // Notify creator
+    createNotification({
+      userId: payload.uid,
+      emoji: "🎉",
+      textKey: `Your event "${result.event.title}" has been created successfully!`,
+      link: `/events/${result.event.id}`,
+      type: "event_created",
+    }).catch(console.error);
+
+    // Reputation: event created (+30 SC)
+    awardSocialCapital(payload.uid, "EVENT_CREATED", {
+      refId: result.event.id,
+      refType: "EVENT",
+    }).catch(console.error);
+
+    // Trust: recalc for speakers who are platform users (speaker = +15 trust)
+    const speakerUserIds = speakersData
+      .map((s) => s.userId)
+      .filter((id): id is string => !!id);
+    for (const uid of speakerUserIds) {
+      recalcTrustScore(uid).catch(console.error);
+    }
 
     return new Response(
       JSON.stringify({ success: true, event: result.event, chatId: result.chat.id }),

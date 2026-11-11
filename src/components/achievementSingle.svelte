@@ -1,18 +1,19 @@
 <script lang="ts">
   export let data;
   import { goto } from "$app/navigation";
+  import { t } from "$lib/i18n";
+  import { getDateLocale } from "$lib/utils/dateLocale";
 
   const achievement = data.achievement;
   const progress = data.userProgress ?? [];
   const percentage = data.percentage ?? 0;
 
-  // EN labels
-  const kindMap: Record<string, string> = {
-    ONE_OFF: "One-off",
-    PROGRESS: "Progress",
-    SEASONAL: "Seasonal"
-  };
-  const kindLabel = kindMap[achievement?.kind] ?? achievement?.kind ?? "";
+  $: kindMap = {
+    ONE_OFF: $t('common.achievements.oneOff'),
+    PROGRESS: $t('common.achievements.progress'),
+    SEASONAL: $t('common.achievements.seasonal')
+  } as Record<string, string>;
+  $: kindLabel = kindMap[achievement?.kind] ?? achievement?.kind ?? "";
 
   function goBack() {
     if (typeof history !== "undefined" && history.length > 1) {
@@ -24,14 +25,14 @@
 </script>
 
 {#if !achievement}
-  <div class="empty">Achievement not found</div>
+  <div class="empty">{$t('common.achievements.notFound')}</div>
 {:else}
   <div class="wrapper">
     <div class="card">
 
       <!-- BACK BUTTON -->
       <button class="back-btn" on:click={goBack}>
-        ← Back
+        ← {$t('common.btn.back')}
       </button>
 
       <!-- HEADER -->
@@ -57,9 +58,9 @@
       <!-- RARITY -->
       <div class="rarity">
         <div class="rarity-top">
-          <div class="rarity-title">Rarity</div>
+          <div class="rarity-title">{$t('common.achievements.rarity')}</div>
           <div class="rarity-value">
-            {percentage}% of users earned this achievement
+            {percentage}% {$t('common.achievements.rarityDesc')}
           </div>
         </div>
 
@@ -71,20 +72,20 @@
       <!-- LEVELS -->
       {#if achievement.levelsJson}
         <div class="section">
-          <h2 class="section-title">Levels</h2>
+          <h2 class="section-title">{$t('common.achievements.levels')}</h2>
 
           <div class="levels-grid">
             {#each achievement.levelsJson as lvl, i}
               <div class="level-card">
-                <div class="level-badge">Level {lvl.level}</div>
+                <div class="level-badge">{$t('common.achievements.level')} {lvl.level}</div>
                 <div class="level-target">
-                  Target: <b>{lvl.target}</b>
+                  {$t('common.achievements.target')}: <b>{lvl.target}</b>
                 </div>
 
                 {#if i === 0}
-                  <div class="level-hint">Starter level</div>
+                  <div class="level-hint">{$t('common.achievements.starterLevel')}</div>
                 {:else}
-                  <div class="level-hint">Next milestone</div>
+                  <div class="level-hint">{$t('common.achievements.nextMilestone')}</div>
                 {/if}
               </div>
             {/each}
@@ -94,7 +95,7 @@
 
       <!-- USER PROGRESS -->
       <div class="section">
-        <h2 class="section-title">Your progress</h2>
+        <h2 class="section-title">{$t('common.achievements.yourProgress')}</h2>
 
         {#if progress.length > 0}
           <div class="timeline">
@@ -103,10 +104,10 @@
                 <div class="dot"></div>
                 <div class="timeline-card">
                   <div class="timeline-level">
-                    Level <b>{p.level}</b> earned
+                    {$t('common.achievements.level')} <b>{p.level}</b> {$t('common.achievements.levelEarned')}
                   </div>
                   <div class="timeline-date">
-                    {new Date(p.earnedAt).toLocaleString()}
+                    {new Date(p.earnedAt).toLocaleString(getDateLocale())}
                   </div>
                 </div>
               </div>
@@ -114,7 +115,7 @@
           </div>
         {:else}
           <div class="no-progress">
-            No progress yet for this achievement.
+            {$t('common.achievements.noProgress')}
           </div>
         {/if}
       </div>

@@ -1,5 +1,11 @@
 <script lang="ts">
+  import { onMount, onDestroy } from "svelte";
+  import { pageHasAssistant } from "$lib/stores/assistant";
   import ContextAssistant from "./ContextAssistant.svelte";
+  import { t } from "$lib/i18n";
+
+  onMount(() => pageHasAssistant.set(true));
+  onDestroy(() => pageHasAssistant.set(false));
 
   export let data: any;
 
@@ -46,7 +52,7 @@
 
 {#if !brand}
   <div class="wrap">
-    <div class="muted">Бренд не найден</div>
+    <div class="muted">{$t('partners.brandDetail.notFound')}</div>
   </div>
 {:else}
   <div class="wrap">
@@ -67,7 +73,7 @@
     </header>
 
     <section class="card">
-      <h2>Категории</h2>
+      <h2>{$t('partners.brandDetail.categories')}</h2>
       {#if brand.categories?.length}
         <div class="chips">
           {#each brand.categories as c}
@@ -75,16 +81,16 @@
           {/each}
         </div>
       {:else}
-        <div class="muted">Нет категорий</div>
+        <div class="muted">{$t('partners.brandDetail.noCategories')}</div>
       {/if}
     </section>
 
     <section class="card">
-      <h2>О бренде</h2>
+      <h2>{$t('partners.brandDetail.about')}</h2>
       <p class="text">{about.description || "—"}</p>
 
       {#if about.products?.length}
-        <h3>Продукты / услуги</h3>
+        <h3>{$t('partners.brandDetail.productsServices')}</h3>
         <ul class="list">
           {#each about.products as p}
             <li>{p}</li>
@@ -94,32 +100,32 @@
     </section>
 
     <section class="card">
-      <h2>Целевая аудитория</h2>
+      <h2>{$t('partners.brandDetail.targetAudience')}</h2>
 
       <div class="grid">
         <div class="cell">
-          <div class="label">Пол</div>
+          <div class="label">{$t('partners.brandDetail.gender')}</div>
           <div class="value">
             {audience.gender?.length ? audience.gender.join(", ") : "—"}
           </div>
         </div>
 
         <div class="cell">
-          <div class="label">Возраст</div>
+          <div class="label">{$t('partners.brandDetail.age')}</div>
           <div class="value">
             {audience.ageRange?.from ?? "—"} – {audience.ageRange?.to ?? "—"}
           </div>
         </div>
 
         <div class="cell">
-          <div class="label">География</div>
+          <div class="label">{$t('partners.brandDetail.geography')}</div>
           <div class="value">
             {audience.geo?.length ? audience.geo.join(", ") : "—"}
           </div>
         </div>
 
         <div class="cell">
-          <div class="label">Интересы</div>
+          <div class="label">{$t('partners.brandDetail.interests')}</div>
           <div class="value">
             {audience.interests?.length ? audience.interests.join(", ") : "—"}
           </div>
@@ -127,7 +133,7 @@
       </div>
 
       {#if hasAny(segments)}
-        <h3>Сегменты аудитории</h3>
+        <h3>{$t('partners.brandDetail.audienceSegments')}</h3>
         <div class="chips">
           {#each segments as s}
             <span class="chip">{s}</span>
@@ -139,11 +145,11 @@
     <!-- ✅ НОВОЕ: проблемы + решения -->
     {#if hasAny(pains) || hasAny(solutions)}
       <section class="card">
-        <h2>Проблемы и решения</h2>
+        <h2>{$t('partners.brandDetail.problemsSolutions')}</h2>
 
         <div class="split">
           <div class="mini">
-            <div class="mini-title">Проблемы (боли)</div>
+            <div class="mini-title">{$t('partners.brandDetail.painPoints')}</div>
             {#if hasAny(pains)}
               <div class="chips">
                 {#each pains as p}
@@ -156,7 +162,7 @@
           </div>
 
           <div class="mini">
-            <div class="mini-title">Решения</div>
+            <div class="mini-title">{$t('partners.brandDetail.solutions')}</div>
             {#if hasAny(solutions)}
               <div class="chips">
                 {#each solutions as s}
@@ -174,7 +180,7 @@
     <!-- ✅ НОВОЕ: потенциальные клиенты -->
     {#if hasAny(potentialClients)}
       <section class="card">
-        <h2>Потенциальные клиенты</h2>
+        <h2>{$t('partners.brandDetail.potentialClients')}</h2>
         <div class="chips">
           {#each potentialClients as c}
             <span class="chip">{c}</span>
@@ -186,7 +192,7 @@
     <!-- ✅ НОВОЕ: монетизация -->
     {#if hasAny(monetizationModels)}
       <section class="card">
-        <h2>Монетизация</h2>
+        <h2>{$t('partners.brandDetail.monetization')}</h2>
         <div class="chips">
           {#each monetizationModels as m}
             <span class="chip">{m}</span>
@@ -196,11 +202,11 @@
     {/if}
 
     <section class="card">
-      <h2>Ссылки и контакты</h2>
+      <h2>{$t('partners.brandDetail.linksContacts')}</h2>
 
       {#if brand.website}
         <div class="row">
-          <span class="label-inline">Сайт:</span>
+          <span class="label-inline">{$t('partners.brandDetail.website')}:</span>
           <a href={brand.website} target="_blank" rel="noreferrer">
             {brand.website}
           </a>
@@ -228,18 +234,18 @@
 
       {#if contacts.phone}
         <div class="row">
-          <span class="label-inline">Телефон:</span>
+          <span class="label-inline">{$t('partners.brandDetail.phone')}:</span>
           <span>{contacts.phone}</span>
         </div>
       {/if}
 
       {#if !brand.website && !hasAnyText(socials) && !contacts.email && !contacts.phone}
-        <div class="muted">Нет ссылок</div>
+        <div class="muted">{$t('partners.brandDetail.noLinks')}</div>
       {/if}
     </section>
 
     <section class="card">
-      <h2>Команда</h2>
+      <h2>{$t('partners.brandDetail.team')}</h2>
 
       {#if team.length}
         <div class="team">
@@ -254,12 +260,12 @@
           {/each}
         </div>
       {:else}
-        <div class="muted">Команда не указана</div>
+        <div class="muted">{$t('partners.brandDetail.noTeam')}</div>
       {/if}
     </section>
 
     <section class="card">
-      <h2>Создатель бренда</h2>
+      <h2>{$t('partners.brandDetail.brandOwner')}</h2>
 
       <div class="owner">
         {#if brand.owner?.info?.photo}
@@ -287,7 +293,7 @@
 <ContextAssistant
   contextKey="brand_unified"
   payload={{ brand }}
-  title="Помощник по бренду"
+  title={$t('partners.brandDetail.assistant')}
 />
 
 <style>

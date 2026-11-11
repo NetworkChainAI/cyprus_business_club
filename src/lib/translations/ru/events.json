@@ -1,0 +1,123 @@
+{
+  "title": "События",
+  "subtitle": "Открывайте и присоединяйтесь к мероприятиям",
+  "search": "Поиск событий...",
+  "sort": {
+    "soonest": "Ближайшие",
+    "latest": "Последние"
+  },
+  "adminPanel": "Панель управления",
+  "filter": {
+    "category": "Категория",
+    "all": "Все",
+    "date": "Дата",
+    "today": "Сегодня",
+    "thisWeek": "На этой неделе",
+    "price": "Цена",
+    "free": "Бесплатно",
+    "paid": "Платно",
+    "clear": "Сбросить фильтры",
+    "resetAll": "Сбросить все фильтры",
+    "less": "Свернуть"
+  },
+  "results": {
+    "event": "событие",
+    "events": "событий"
+  },
+  "card": {
+    "going": "Иду",
+    "goingCount": "идут"
+  },
+  "empty": {
+    "title": "События не найдены",
+    "subtitle": "Попробуйте изменить поиск или фильтры"
+  },
+  "detail": {
+    "about": "О событии",
+    "agenda": "Программа",
+    "location": "Место проведения",
+    "organizer": "Организатор",
+    "speakers": "Спикеры",
+    "sponsors": "Спонсоры",
+    "participants": "Участники",
+    "similarEvents": "Похожие события",
+    "register": "Зарегистрироваться",
+    "registered": "Зарегистрирован",
+    "share": "Поделиться",
+    "date": "Дата и время",
+    "price": "Цена",
+    "free": "Бесплатно",
+    "askAi": "Спросить ИИ о событии",
+    "aiAssistantTitle": "Помощник по мероприятию",
+    "eventFallback": "Событие",
+    "userFallback": "Пользователь",
+    "speakerFallback": "Спикер",
+    "sponsorFallback": "Спонсор",
+    "sponsorLabel": "Спонсор",
+    "hostedBy": "Организовано",
+    "entityCommunity": "Сообщество",
+    "entityPersonalBrand": "Личный бренд",
+    "entityCompany": "Компания",
+    "eventManager": "Менеджер мероприятия",
+    "openInMaps": "Открыть на карте",
+    "showLess": "Свернуть",
+    "showAllParticipants": "Показать всех участников",
+    "loginFirst": "Сначала войдите",
+    "eventEnded": "Мероприятие завершено",
+    "youAreRegistered": "Вы зарегистрированы",
+    "buyTicket": "Купить билет",
+    "registerNow": "Зарегистрироваться",
+    "openChat": "Открыть чат",
+    "registerToChat": "Зарегистрируйтесь для доступа к чату",
+    "bookmark": "В закладки"
+  },
+  "pay": {
+    "completePayment": "Оплата",
+    "total": "Итого",
+    "paymentSuccessful": "Оплата прошла успешно",
+    "card": "Карта",
+    "enterOtpCode": "Введите 6-значный код подтверждения",
+    "paymentFailed": "Ошибка оплаты",
+    "paymentError": "Ошибка оплаты. Попробуйте ещё раз.",
+    "failedSession": "Не удалось создать платёжную сессию.",
+    "registrationFailed": "Ошибка регистрации после оплаты.",
+    "walletRequired": "Требуется кошелёк",
+    "walletRequiredDesc": "Создайте кастодиальный кошелёк для оплаты в USDT.",
+    "createWallet": "Создать кошелёк",
+    "sessionExpired": "Сессия истекла",
+    "sessionExpiredDesc": "Подключите кастодиальный кошелёк заново.",
+    "reconnectWallet": "Подключить кошелёк",
+    "checkingWallet": "Проверка кошелька...",
+    "priceInUsdt": "Цена в USDT",
+    "yourBalance": "Ваш баланс",
+    "insufficientBalance": "Недостаточно средств. Нужно",
+    "confirmationCode": "Код подтверждения (Google Authenticator)",
+    "processing": "Обработка...",
+    "payWithUsdt": "Оплатить в USDT",
+    "redirectingStripe": "Перенаправление на Stripe...",
+    "payWithCard": "Оплатить картой",
+    "cancel": "Отмена",
+    "close": "Закрыть"
+  },
+  "share": {
+    "title": "Поделиться событием",
+    "copied": "Скопировано!",
+    "copyLink": "Копировать ссылку"
+  },
+  "preview": {
+    "loadError": "Не удалось загрузить события"
+  },
+  "create": {
+    "title": "Создать событие",
+    "name": "Название события",
+    "description": "Описание",
+    "date": "Дата",
+    "time": "Время",
+    "location": "Место",
+    "price": "Цена",
+    "category": "Категория",
+    "photo": "Фото",
+    "submit": "Создать событие",
+    "submitting": "Создаём..."
+  }
+}

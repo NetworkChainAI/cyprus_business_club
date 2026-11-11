@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+
   export let data;
 
   type FilterType = "all" | "one" | "progress" | "seasonal";
@@ -11,11 +13,11 @@
     userAchievements.map((ua: any) => ua.achievementId)
   );
 
-  const filters: { id: FilterType; label: string }[] = [
-    { id: "all", label: "Все" },
-    { id: "one", label: "Одноразовые" },
-    { id: "progress", label: "Прогресс" },
-    { id: "seasonal", label: "Временные" },
+  const filterKeys: { id: FilterType; key: string }[] = [
+    { id: "all", key: "common.filter.all" },
+    { id: "one", key: "common.achievements.oneOff" },
+    { id: "progress", key: "common.achievements.progress" },
+    { id: "seasonal", key: "common.achievements.seasonal" },
   ];
 
   // Сделаем список реактивным — так фильтрация всегда точно пересчитается
@@ -40,10 +42,10 @@
     <div class="header">
       <div class="header-text">
         <div class="title">
-          Достижения
+          {$t('common.achievements.title')}
         </div>
         <div class="subtitle">
-          Получено <b>{earnedCount}</b> из <b>{totalCount}</b>
+          {$t('common.achievements.earned')} <b>{earnedCount}</b> {$t('common.achievements.of')} <b>{totalCount}</b>
         </div>
       </div>
 
@@ -51,14 +53,14 @@
 
     <!-- Filters -->
     <div class="filters">
-      {#each filters as f}
+      {#each filterKeys as f}
         <button
           type="button"
           class="filter-btn"
           class:active={activeFilter === f.id}
           on:click={() => (activeFilter = f.id)}
         >
-          {f.label}
+          {$t(f.key)}
         </button>
       {/each}
     </div>

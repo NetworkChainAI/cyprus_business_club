@@ -1,478 +1,608 @@
 <script lang="ts">
-  type TeamMember = { name: string; role: string; email: string };
+  import { t } from "$lib/i18n";
+  import { photoSrc } from "$lib/utils/photo";
+
+  type TeamMember = {
+    name: string;
+    role: string;
+    email: string;
+    userId?: string | null;
+    photo?: string | null;
+  };
   export let team: TeamMember[] = [];
 
-  function addTeamMember() {
-    team = [...team, { name: "", role: "", email: "" }];
+  // User search
+  let searchQuery = "";
+  let searchResults: any[] = [];
+  let searching = false;
+  let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+  let showDropdown = false;
+
+  function onSearchInput() {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      searchResults = [];
+      showDropdown = false;
+      return;
+    }
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => searchUsers(q), 300);
   }
+
+  async function searchUsers(q: string) {
+    searching = true;
+    try {
+      const res = await fetch(`/api/members/search?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const users = await res.json();
+        // Filter out already added platform users
+        const addedIds = new Set(team.filter((m) => m.userId).map((m) => m.userId));
+        searchResults = users.filter((u: any) => !addedIds.has(u.id));
+        showDropdown = searchResults.length > 0;
+      }
+    } catch {
+      searchResults = [];
+    } finally {
+      searching = false;
+    }
+  }
+
+  function addPlatformUser(user: any) {
+    const member: TeamMember = {
+      name: user.info?.name || user.email,
+      role: "",
+      email: user.email,
+      userId: user.id,
+      photo: user.info?.photo || null,
+    };
+    team = [...team, member];
+    searchQuery = "";
+    searchResults = [];
+    showDropdown = false;
+  }
+
+  function addManualMember() {
+    team = [...team, { name: "", role: "", email: "", userId: null, photo: null }];
+  }
+
   function removeTeamMember(idx: number) {
     team = team.filter((_, i) => i !== idx);
+  }
+
+  let brokenPhotos: Record<string, boolean> = {};
+
+  function handleBlur() {
+    // Delay to allow click on dropdown items
+    setTimeout(() => {
+      showDropdown = false;
+    }, 200);
   }
 </script>
 
 <section class="card">
-  <h2>Team</h2>
+  <div class="card-head">
+    <iconify-icon icon="lucide:users" width="20" height="20" />
+    <h2>{$t('partners.create.teamMembers')}</h2>
+  </div>
+
+  <!-- Add member controls -->
+  <div class="add-row">
+    <div class="field search-field">
+      <span class="label">{$t('partners.create.searchMembers')}</span>
+      <div class="search-wrap">
+        <input
+          type="text"
+          placeholder={$t('partners.create.searchMembersPlaceholder')}
+          bind:value={searchQuery}
+          on:input={onSearchInput}
+          on:focus={() => { if (searchResults.length > 0) showDropdown = true; }}
+          on:blur={handleBlur}
+        />
+        {#if searching}
+          <div class="search-spinner">
+            <iconify-icon icon="lucide:loader-2" width="14" height="14" class="spin" />
+          </div>
+        {/if}
+
+        {#if showDropdown}
+          <div class="search-dropdown">
+            {#each searchResults as user}
+              <button type="button" class="search-item" on:mousedown|preventDefault={() => addPlatformUser(user)}>
+                <div class="search-item-avatar">
+                  {#if user.info?.photo && !brokenPhotos[user.id]}
+                    <img src={photoSrc(user.info.photo, 64)} alt="" on:error={() => (brokenPhotos = { ...brokenPhotos, [user.id]: true })} />
+                  {:else}
+                    <div class="avatar-fallback">
+                      {(user.info?.name || user.email || "?")[0].toUpperCase()}
+                    </div>
+                  {/if}
+                </div>
+                <div class="search-item-info">
+                  <div class="search-item-name">{user.info?.name || $t('partners.create.noName')}</div>
+                  <div class="search-item-email">{user.email}</div>
+                </div>
+                {#if user.info?.status}
+                  <span class="search-item-status">{user.info.status}</span>
+                {/if}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </div>
+
+    <span class="or-divider">{$t('partners.create.or')}</span>
+
+    <button type="button" class="btn-add" on:click={addManualMember}>
+      <iconify-icon icon="lucide:user-plus" width="14" height="14" />
+      {$t('partners.create.addManually')}
+    </button>
+  </div>
 
   {#if team.length === 0}
-    <div class="muted">No members added yet</div>
+    <div class="empty">
+      <div class="empty-icon">
+        <iconify-icon icon="lucide:users" width="32" height="32" />
+      </div>
+      <div class="empty-text">{$t('partners.create.noTeamYet')}</div>
+      <div class="empty-hint">{$t('partners.create.noTeamHint')}</div>
+    </div>
   {/if}
 
   {#each team as m, i}
-    <div class="team-row">
-      <input bind:value={m.name} placeholder="Name" />
-      <input bind:value={m.role} placeholder="Role" />
-      <input bind:value={m.email} placeholder="Email" />
-      <button type="button" class="danger" on:click={() => removeTeamMember(i)}>Remove</button>
+    <div class="member-card" class:platform={!!m.userId}>
+      <div class="member-avatar">
+        {#if m.userId && m.photo && !brokenPhotos[m.userId]}
+          <img src={photoSrc(m.photo, 64)} alt="" on:error={() => (brokenPhotos = { ...brokenPhotos, [m.userId]: true })} />
+        {:else if m.userId}
+          <div class="avatar-circle platform-avatar">
+            {(m.name || "?")[0].toUpperCase()}
+          </div>
+        {:else}
+          <iconify-icon icon="lucide:user-circle" width="28" height="28" />
+        {/if}
+      </div>
+
+      <div class="member-fields">
+        {#if m.userId}
+          <!-- Platform user: name is read-only, role is editable -->
+          <div class="platform-name-row">
+            <span class="platform-name">{m.name}</span>
+            <span class="platform-badge">
+              <iconify-icon icon="lucide:badge-check" width="12" height="12" />
+              {$t('partners.create.member')}
+            </span>
+          </div>
+          <div class="input-icon">
+            <iconify-icon icon="lucide:briefcase" width="14" height="14" />
+            <input bind:value={m.role} placeholder={$t('partners.create.rolePlaceholder')} />
+          </div>
+        {:else}
+          <!-- Manual entry: all fields editable -->
+          <div class="input-icon">
+            <iconify-icon icon="lucide:user" width="14" height="14" />
+            <input bind:value={m.name} placeholder={$t('partners.create.namePlaceholder')} />
+          </div>
+          <div class="input-icon">
+            <iconify-icon icon="lucide:briefcase" width="14" height="14" />
+            <input bind:value={m.role} placeholder={$t('partners.create.roleShort')} />
+          </div>
+          <div class="input-icon">
+            <iconify-icon icon="lucide:mail" width="14" height="14" />
+            <input type="email" bind:value={m.email} placeholder={$t('partners.create.memberEmail')} />
+          </div>
+        {/if}
+      </div>
+
+      <button type="button" class="btn-remove" on:click={() => removeTeamMember(i)} title={$t('partners.create.remove')}>
+        <iconify-icon icon="lucide:trash-2" width="14" height="14" />
+      </button>
     </div>
   {/each}
-
-  <button type="button" on:click={addTeamMember}>+ Add member</button>
 </section>
 
-
 <style>
-  .wrap {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 32px 16px 40px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  h1 {
-    font-size: 32px;
-    font-weight: 600;
-    margin: 0 0 4px;
-    color: #0b3954;
-  }
-
-  .steps-indicator {
-    display: inline-flex;
-    gap: 8px;
-    font-size: 13px;
-    color: #6b7280;
-    font-weight: 500;
-  }
-
-  .steps-indicator span {
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    background: transparent;
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-    font-weight: 500;
-  }
-
-  .steps-indicator span:hover {
-    border-color: rgba(37, 99, 235, 0.3);
-  }
-
-  .steps-indicator span.active {
-    border-color: #2563eb;
-    color: #1d4ed8;
-    background: rgba(37, 99, 235, 0.08);
-  }
-
   .card {
     background: #fff;
-    border-radius: 1rem;
-    padding: 2rem;
-    width: 100%;
-    max-width: 1100px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(15, 23, 42, 0.05);
-    color: #0b3954;
-    transition: box-shadow 0.25s ease, transform 0.15s ease;
-    position: relative;
-    display: grid;
-    gap: 14px;
-  }
-
-  .card:hover {
-    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
-  }
-
-  .card h2,
-  .card h3 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0 0 4px;
-    color: #0b3954;
-  }
-
-  .card h3 {
-    margin-top: 10px;
-  }
-
-  label {
-    display: grid;
-    gap: 6px;
-    font-size: 14px;
-    color: #111827;
-    font-weight: 500;
-  }
-
-  input,
-  textarea {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    color: #0f172a;
-    padding: 10px 12px;
-    border-radius: 0.7rem;
-    outline: none;
-    font-size: 14px;
-    font-weight: 400;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  }
-
-  input::placeholder,
-  textarea::placeholder {
-    color: #9ca3af;
-    font-weight: 400;
-  }
-
-  input:focus,
-  textarea:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
-    background: #ffffff;
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
-
-  .logo-preview {
-    width: 120px;
-    height: 120px;
-    border-radius: 0.9rem;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-  }
-
-  .logo-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .muted {
-    color: #6b7280;
-    font-size: 14px;
-    font-weight: 400;
-  }
-
-  .muted.small {
-    font-size: 12px;
-  }
-
-  .row {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
     display: flex;
+    flex-direction: column;
     gap: 16px;
-    flex-wrap: wrap;
-    align-items: flex-start;
   }
 
-  button {
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 0.75rem;
-    border: 1px solid transparent;
-    padding: 8px 14px;
-    cursor: pointer;
-    background: #2563eb;
-    color: #ffffff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.12s ease,
-      border-color 0.2s ease;
-  }
-
-  button:hover {
-    background: #1d4ed8;
-    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
-    transform: translateY(-0.5px);
-  }
-
-  button:active {
-    transform: translateY(0);
-    box-shadow: none;
-  }
-
-  button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .secondary {
-    background: #ffffff;
-    color: #111827;
-    border-color: #d1d5db;
-  }
-
-  .secondary:hover {
-    background: #f3f4f6;
-    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12);
-  }
-
-  .danger {
-    background: #ef4444;
-    border-color: #b91c1c;
-    color: #fef2f2;
-  }
-
-  .danger:hover {
-    background: #dc2626;
-    box-shadow: 0 3px 10px rgba(220, 38, 38, 0.25);
-  }
-
-  .add {
-    background: #ffffff;
-    color: #2563eb;
-    border-color: rgba(37, 99, 235, 0.35);
-  }
-
-  .add:hover {
-    background: #eff6ff;
-  }
-
-  .remove {
-    background: #fee2e2;
-    color: #b91c1c;
-    border-color: #fecaca;
-    padding-inline: 10px;
-  }
-
-  .remove:hover {
-    background: #fecaca;
-  }
-
-  .chips {
+  .card-head {
     display: flex;
-    gap: 8px;
-    margin-top: 6px;
-    flex-wrap: wrap;
-  }
-
-  .chips button {
-    background: #f9fafb;
-    border-color: #e5e7eb;
-    color: #374151;
-    font-weight: 500;
-    padding-inline: 10px;
-  }
-
-  .chips button:hover {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-  }
-
-  .chips button.active {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: #ffffff;
-  }
-
-  .age {
-    min-width: 200px;
-  }
-
-  .age-inputs {
-    display: flex;
-    gap: 8px;
-  }
-
-  .age-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .age-any {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: #6b7280;
-    font-weight: 400;
-  }
-
-  .age-any input {
-    width: auto;
-    padding: 0;
-  }
-
-  .dynamic {
-    display: grid;
     gap: 10px;
-    margin-bottom: 4px;
+    color: #0f172a;
   }
 
-  .row-field {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .row-field input {
+  .card-head h2 {
+    font-size: 17px;
+    font-weight: 800;
+    margin: 0;
+    color: #0f172a;
     flex: 1;
   }
 
-  .team-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
-    gap: 10px;
-    align-items: center;
+  .card-head > :global(iconify-icon) {
+    color: #4f46e5;
   }
 
-  .actions {
+  /* Add row */
+  .add-row {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 4px;
+    align-items: flex-end;
+    gap: 12px;
   }
 
-  .alert {
-    padding: 10px 12px;
-    border-radius: 0.8rem;
-    font-size: 14px;
-    max-width: 1100px;
-    font-weight: 400;
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
-  .alert.error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #b91c1c;
+  .search-field {
+    flex: 1;
   }
 
-  .alert.success {
-    background: #ecfdf3;
-    border: 1px solid #bbf7d0;
-    color: #166534;
+  .label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
   }
 
-  .dropdown {
+  .or-divider {
+    font-size: 12px;
+    font-weight: 700;
+    color: #94a3b8;
+    flex-shrink: 0;
+    padding-bottom: 10px;
+  }
+
+  /* Search */
+  .search-wrap {
     position: relative;
   }
 
-  .dropdown-btn {
-    width: 100%;
-    justify-content: space-between;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    color: #111827;
-    padding: 10px 12px;
-    border-radius: 0.7rem;
-    font-weight: 400;
-  }
-
-  .dropdown-btn:hover {
-    background: #ffffff;
-    border-color: #cbd5f5;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-  }
-
-  .chev {
-    opacity: 0.7;
-    font-size: 12px;
-  }
-
-  .dropdown-menu {
+  .search-spinner {
     position: absolute;
-    z-index: 9999;
-    top: calc(100% + 6px);
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    display: flex;
+  }
+
+  :global(.spin) {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Dropdown */
+  .search-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
     left: 0;
     right: 0;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.9rem;
-    padding: 8px;
-    display: grid;
-    gap: 8px;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 50;
   }
 
-  .search {
-    width: 100%;
-    font-weight: 400;
-  }
-
-  .menu-list {
-    max-height: 220px;
-    overflow: auto;
-    display: grid;
-    gap: 6px;
-    padding-right: 4px;
-  }
-
-  .menu-item {
+  .search-item {
     display: flex;
-    gap: 8px;
     align-items: center;
-    font-size: 14px;
-    padding: 6px;
-    border-radius: 0.6rem;
-    color: #111827;
-    font-weight: 400;
-  }
-
-  .menu-item:hover {
-    background: #f3f4f6;
-  }
-
-  .menu-item input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    accent-color: #2563eb;
-  }
-
-  .menu-btn {
+    gap: 10px;
     width: 100%;
-    justify-content: flex-start;
-    background: #ffffff;
-    color: #111827;
-    border-color: #e5e7eb;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: background 0.1s;
+  }
+
+  .search-item:hover {
+    background: #f8fafc;
+  }
+
+  .search-item:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .search-item-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .search-item-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .avatar-fallback {
+    width: 100%;
+    height: 100%;
+    background: #4f46e5;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .search-item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .search-item-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .search-item-email {
+    font-size: 11px;
+    color: #94a3b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .search-item-status {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  /* Empty state */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 16px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+  }
+
+  .empty-icon {
+    color: #cbd5e1;
+  }
+
+  .empty-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  .empty-hint {
+    font-size: 13px;
+    color: #94a3b8;
+  }
+
+  /* Member card */
+  .member-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    transition: border-color 0.15s;
+  }
+
+  .member-card:hover {
+    border-color: #cbd5e1;
+  }
+
+  .member-card.platform {
+    border-color: #c7d2fe;
+    background: #faf5ff08;
+  }
+
+  .member-avatar {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #eef2ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4f46e5;
+    overflow: hidden;
+  }
+
+  .member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .avatar-circle {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 16px;
+  }
+
+  .platform-avatar {
+    background: #4f46e5;
+    color: #fff;
+  }
+
+  .member-fields {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  /* Platform user name row */
+  .platform-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .platform-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .platform-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+
+  /* Input with icon */
+  .input-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-icon :global(iconify-icon) {
+    position: absolute;
+    left: 10px;
+    color: #94a3b8;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .input-icon input {
+    padding-left: 32px;
+  }
+
+  input {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
     padding: 10px 12px;
-    border-radius: 0.7rem;
-    box-shadow: none;
-    transform: none;
+    border-radius: 10px;
+    outline: none;
+    font-size: 14px;
     font-weight: 400;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
   }
 
-  .menu-btn:hover {
-    background: #f3f4f6;
-    box-shadow: none;
-    transform: none;
+  input::placeholder {
+    color: #94a3b8;
   }
 
-  .menu-btn.active {
-    background: rgba(37, 99, 235, 0.08);
-    border-color: rgba(37, 99, 235, 0.35);
-    color: #1d4ed8;
+  input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
   }
 
-  @media (max-width: 768px) {
+  /* Buttons */
+  .btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: #4f46e5;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-add:hover {
+    background: #e0e7ff;
+  }
+
+  .btn-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.15s;
+  }
+
+  .btn-remove:hover {
+    background: #fee2e2;
+  }
+
+  @media (max-width: 640px) {
     .card {
-      padding: 1.4rem;
+      padding: 18px;
     }
 
-    .team-row {
-      grid-template-columns: 1fr;
+    .add-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
     }
 
-    .wrap {
-      padding-inline: 12px;
+    .or-divider {
+      text-align: center;
+      padding-bottom: 0;
+    }
+
+    .btn-add {
+      justify-content: center;
+    }
+
+    .member-card {
+      flex-direction: column;
+    }
+
+    .member-avatar {
+      display: none;
     }
   }
 </style>

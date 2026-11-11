@@ -89,6 +89,8 @@
 </style> -->
 
 <script lang="ts">
+  import { t } from "$lib/i18n";
+
   export let currencies: any[] = [];
   export let selectedCurrency: any | null = null;
 
@@ -117,7 +119,7 @@
     <div class="dropdown">
       <input
         type="text"
-        placeholder="Search currency..."
+        placeholder={$t('common.exchange.searchCurrency')}
         class="search"
         bind:value={search}
       />

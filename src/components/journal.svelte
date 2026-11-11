@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from "svelte";
+  import { t } from "$lib/i18n";
 
   const pdfUrl = "/assets/docs/file.pdf";
 
@@ -201,20 +202,20 @@
     on:click={() => (thumbsOpen = !thumbsOpen)}
     aria-expanded={thumbsOpen}
   >
-    {thumbsOpen ? "Hide pages" : "Show pages"}
+    {thumbsOpen ? $t('common.journal.hidePages') : $t('common.journal.showPages')}
   </button>
 
   {#if thumbs.length}
     <div class="thumbs {thumbsOpen ? 'open' : 'closed'}">
-      {#each thumbs as t, i}
+      {#each thumbs as thumb, i}
         <button
           class="thumb {i === currentPage ? 'active' : ''}"
           on:click={() => selectThumb(i)}
-          title={`Стр. ${i + 1}`}
+          title={`${$t('common.journal.page')} ${i + 1}`}
           type="button"
         >
-          {#if t}
-            <img src={t} alt={`page ${i + 1}`} />
+          {#if thumb}
+            <img src={thumb} alt={`page ${i + 1}`} />
           {:else}
             <div class="thumb-skel">...</div>
           {/if}
@@ -223,7 +224,7 @@
       {/each}
     </div>
   {:else}
-    <div class="thumbs-loading">Готовлю превью страниц…</div>
+    <div class="thumbs-loading">{$t('common.journal.loadingThumbs')}</div>
   {/if}
 </div>
 

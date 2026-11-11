@@ -1,0 +1,135 @@
+{
+  "hero": {
+    "badge": "",
+    "title": "Where business<br />meets community",
+    "subtitle": "Connect with entrepreneurs, attend exclusive events, and grow your network in one platform.",
+    "getStarted": "Get started",
+    "browseEvents": "Browse events"
+  },
+  "pills": {
+    "ai": "AI Assistants",
+    "wallet": "Web3 Wallet",
+    "events": "Events",
+    "chat": "Chat"
+  },
+  "heroCards": {
+    "activeMembers": "Active members",
+    "eventsHosted": "Events hosted",
+    "partners": "Partners",
+    "communities": "Communities"
+  },
+  "stats": {
+    "members": "Members",
+    "events": "Events",
+    "partners": "Partners",
+    "communities": "Communities"
+  },
+  "sections": {
+    "upcomingEvents": "Upcoming Events",
+    "upcomingEventsSub": "Join the community at our latest events",
+    "allEvents": "All events",
+    "ourPartners": "Our Partners",
+    "ourPartnersSub": "Trusted brands and businesses in the community",
+    "allPartners": "All partners",
+    "communities": "Communities",
+    "communitiesSub": "Join groups of like-minded professionals",
+    "allCommunities": "All communities",
+    "communityMembers": "Community Members",
+    "communityMembersSub": "Meet the people behind the network",
+    "allMembers": "All members"
+  },
+  "event": {
+    "free": "Free",
+    "featured": "Featured",
+    "going": "going",
+    "company": "Company",
+    "personal": "Personal"
+  },
+  "community": {
+    "public": "Public",
+    "private": "Private",
+    "members": "members"
+  },
+  "member": {
+    "followers": "followers"
+  },
+  "reputation": {
+    "title": "Reputation & Ranks",
+    "subtitle": "Earn Social Capital by contributing to the community",
+    "learnMore": "Learn more",
+    "earnTitle": "Earn Social Capital",
+    "createEvent": "Create Event",
+    "getFollowers": "Get Followers",
+    "openWallet": "Open Wallet",
+    "joinCommunity": "Join Community"
+  },
+  "tech": {
+    "title": "Powered by Smart Technologies",
+    "subtitle": "AI intelligence and Web3 security built into every feature",
+    "ai": {
+      "title": "AI Assistants",
+      "desc": "Smart bots guide you through events, brands, and connections",
+      "feat1": "Context-aware chat helpers on every page",
+      "feat2": "Smart search & discovery for people and brands",
+      "feat3": "Personalized recommendations and insights"
+    },
+    "wallet": {
+      "title": "Secure Wallet",
+      "desc": "Pay for events and transfer funds on the Polygon network",
+      "feat1": "Pay for events with USDT on Polygon",
+      "feat2": "Instant peer-to-peer transfers",
+      "feat3": "2FA protection on every transaction"
+    },
+    "learnMore": "Learn more",
+    "pageTitle": "Platform Technologies",
+    "heroTitle": "Platform Technologies",
+    "heroSub": "Powered by cutting-edge <strong>AI</strong> and <strong>Web3</strong> solutions to deliver a smarter, faster, and more secure experience.",
+    "aiSection": {
+      "title": "AI-Powered Assistants",
+      "subtitle": "Smart bots that help you with everything",
+      "desc": "Our platform integrates advanced AI assistants into every aspect of your experience. Whether you're exploring events, building your brand, or connecting with people — intelligent bots are always ready to guide, recommend, and optimize.",
+      "whatAiCanDo": "What AI Can Do",
+      "contextAware": "Context-Aware Assistants",
+      "contextAwareDesc": "AI chat helpers available on every page, understanding your current context",
+      "eventRec": "Event Recommendations",
+      "eventRecDesc": "AI picks the best events based on your interests and activity",
+      "smartSearch": "Smart Search & Discovery",
+      "smartSearchDesc": "Find people, partners, and communities with intelligent matching",
+      "contentMod": "Content Moderation",
+      "contentModDesc": "Automatic review of photos, descriptions, and user-generated content",
+      "insights": "Personalized Insights",
+      "insightsDesc": "Tailored suggestions based on your behavior and preferences",
+      "brandOpt": "Brand & Profile Optimization",
+      "brandOptDesc": "AI helps you craft better profiles, brands, and event descriptions"
+    },
+    "walletSection": {
+      "title": "Web3 Custody Wallet",
+      "subtitle": "Secure on-chain payments powered by Polygon",
+      "desc": "Every user gets a secure custodial wallet on the <strong>Polygon network</strong>. Pay for events, transfer funds to other members, and manage your assets — all within the platform. No external wallets or complex setups required.",
+      "features": "Wallet Features",
+      "eventPayments": "Event Payments",
+      "eventPaymentsDesc": "Pay for tickets and registrations with USDT directly from your wallet",
+      "p2p": "Peer-to-Peer Transfers",
+      "p2pDesc": "Send funds to any platform member instantly via chat",
+      "twoFa": "2FA Protection",
+      "twoFaDesc": "Every transaction confirmed with Google Authenticator OTP",
+      "lowCost": "Low-Cost Transactions",
+      "lowCostDesc": "Polygon network ensures minimal fees and fast confirmations",
+      "qrDeposits": "QR Code Deposits",
+      "qrDepositsDesc": "Top up your wallet easily by scanning a QR code",
+      "encrypted": "Encrypted & Secure",
+      "encryptedDesc": "Private keys are encrypted and stored securely on our infrastructure"
+    },
+    "security": {
+      "title": "Security First",
+      "subtitle": "Your data, your control",
+      "desc": "We take security seriously. All connections are protected with <strong>HTTPS</strong>, authentication uses <strong>JWT tokens</strong> stored in secure HttpOnly cookies, wallet operations require <strong>2FA verification</strong>, and all sensitive data is encrypted at rest and in transit."
+    }
+  },
+  "cta": {
+    "title": "Ready to join?",
+    "subtitle": "Join us and unlock new opportunities.",
+    "createAccount": "Create account",
+    "exploreEvents": "Explore events"
+  }
+}

@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { photoSrc } from "$lib/utils/photo";
+  import { t } from "$lib/i18n";
+  import { withLang } from "$lib/utils/withLang";
 
   interface User {
     id: string;
@@ -61,7 +64,7 @@
 
   const handleLogout = async () => {
     await fetch("/api/logout", { method: "POST" });
-    window.location.href = "/";
+    window.location.href = withLang("/");
   };
 </script>
 
@@ -71,19 +74,20 @@
   <div class="user-avatar">
     <button
       class="avatar-btn"
-      aria-label="User menu"
+      aria-label={$t('common.user.myProfile')}
       on:click={toggleMenu}
       aria-expanded={menuOpen}
     >
       <img
-        src={user.info?.photo
-          ? `/api/photo/${user.info.photo.split("/").pop()}`
-          : "https://api.dicebear.com/7.x/initials/svg?seed=" +
-            (user.info?.name || "User")}
-        alt="User photo"
+        src={photoSrc(user.info?.photo, 80) ||
+            "https://api.dicebear.com/7.x/initials/svg?seed=" +
+            encodeURIComponent(user.info?.name || "User")}
+        alt={$t('common.user.myProfile')}
         class="avatar-img"
         width="38"
         height="38"
+        decoding="async"
+        on:error={(e) => { e.currentTarget.src = "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(user?.info?.name || "User"); }}
       />
 
       {#if showName}
@@ -105,19 +109,19 @@
 
     {#if menuOpen}
       <div class="dropdown">
-        <a href="/profile" on:click={handleLinkClick}>👤 My Profile</a>
+        <a href={withLang('/profile')} on:click={handleLinkClick}>👤 {$t('common.user.myProfile')}</a>
         <a
           href="#"
           on:click|preventDefault={() => {
             handleLogout();
             menuOpen = false;
-          }}>🚪 Log out</a
+          }}>🚪 {$t('common.user.logOut')}</a
         >
       </div>
     {/if}
   </div>
 {:else}
-  <a href="/login" class="login-link">Sign in</a>
+  <a href={withLang('/login')} class="login-link">{$t('common.user.signIn')}</a>
 {/if}
 
 <style>

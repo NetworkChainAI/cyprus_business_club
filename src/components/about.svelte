@@ -1,44 +1,26 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
 </script>
 
-<!-- ВНЕ КАРТОК -->
 <section class="about-header">
-  <h1>About All AI Events</h1>
-
-  <p class="intro">
-    At <strong>All AI Events</strong>, we bring the global AI community together.
-    Whether you're an industry leader, an aspiring innovator, or simply curious
-    about the world of artificial intelligence, our platform is your gateway to
-    the most exciting events happening across the globe.
-  </p>
+  <h1>{$t('common.about.title')}</h1>
+  <p class="intro">{@html $t('common.about.intro')}</p>
 </section>
 
-<!-- КАРТОЧКИ -->
 <section class="about-section">
-
-  <!-- CARD 1 -->
   <div class="about-card">
-    <h2>Why We Exist</h2>
-
-    <p>
-      AI is transforming industries, shaping the future, and driving groundbreaking
-      innovations. We believe in connecting people who share a passion for AI by
-      providing a comprehensive platform to discover, explore, and engage with the
-      latest conferences, workshops, and meetups.
-    </p>
+    <h2>{$t('common.about.whyTitle')}</h2>
+    <p>{$t('common.about.whyText')}</p>
   </div>
 
-  <!-- CARD 2 -->
   <div class="about-card">
-    <h2>What We Offer</h2>
-
+    <h2>{$t('common.about.offerTitle')}</h2>
     <ul class="centered-list">
-      <li><strong>Worldwide Coverage:</strong> Find events from Silicon Valley to Singapore and everywhere in between.</li>
-      <li><strong>Curated for Excellence:</strong> Only the most relevant and impactful events make it to our platform.</li>
-      <li><strong>Tools for Growth:</strong> Stay updated, network with industry leaders, and take your AI journey to the next level.</li>
+      <li>{@html $t('common.about.offer1')}</li>
+      <li>{@html $t('common.about.offer2')}</li>
+      <li>{@html $t('common.about.offer3')}</li>
     </ul>
   </div>
-
 </section>
 
 <style>

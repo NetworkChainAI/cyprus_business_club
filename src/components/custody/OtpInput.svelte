@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { t } from "$lib/i18n";
   const dispatch = createEventDispatcher();
 
   export let length = 6;
@@ -9,7 +10,6 @@
   let inputs: HTMLInputElement[] = [];
   let otp = Array(length).fill("");
 
-  // синхронизация внешнего value
   $: if (value && value.length === length) {
     otp = value.split("");
   }
@@ -55,7 +55,6 @@
     if (!digits) return;
 
     digits.split("").forEach((d, i) => (otp[i] = d));
-
     dispatch("change", otp.join(""));
 
     const last = digits.length - 1;
@@ -63,10 +62,10 @@
   }
 </script>
 
-<div class="otp-wrapper" on:paste={handlePaste}>
+<div class="otp" on:paste={handlePaste}>
   {#each otp as d, i}
     <input
-      class="otp-box"
+      class="box"
       bind:this={inputs[i]}
       bind:value={otp[i]}
       maxlength="1"
@@ -75,42 +74,70 @@
       {disabled}
       on:input={(e) => handleInput(e, i)}
       on:keydown={(e) => handleKeydown(e, i)}
+      aria-label={`${$t('wallet.otp.digit')} ${i + 1}`}
     />
   {/each}
 </div>
 
 <style>
-  .otp-wrapper {
+  .otp {
+    width: 100%;
     display: flex;
     justify-content: center;
-    gap: 0.7rem;
-    margin: 1.2rem 0;
+    gap: 10px;
+    margin: 10px 0 4px;
+    flex-wrap: nowrap;
+    overflow-x: hidden;
   }
 
-  .otp-box {
-    width: 52px;
-    height: 62px;
-    border-radius: 10px;
-    background: #ffffff;
-    border: 1px solid #3d3d3d;
-    color: #0b3954;
-    font-size: 1.7rem;
+  .box {
+    width: 48px;
+    height: 52px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 900;
     text-align: center;
-    font-weight: 700;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    transition: 0.15s border, 0.15s box-shadow, 0.15s background;
-  }
-
-  .otp-box:focus {
-    border-color: #0b3954;
-    background: #f3f7fa;
-    box-shadow: 0 0 0 3px rgba(11,57,84,0.25);
     outline: none;
+    transition: border-color 0.15s;
+    caret-color: transparent;
   }
 
-  .otp-box:disabled {
+  .box:focus {
+    border-color: #4f46e5;
+  }
+
+  .box:disabled {
     opacity: 0.55;
-    background: #f1f1f1;
+    background: #f8fafc;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 520px) {
+    .otp {
+      gap: 8px;
+    }
+
+    .box {
+      width: 42px;
+      height: 48px;
+      border-radius: 12px;
+      font-size: 17px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .otp {
+      gap: 6px;
+    }
+
+    .box {
+      width: 36px;
+      height: 44px;
+      border-radius: 10px;
+      font-size: 16px;
+    }
   }
 </style>

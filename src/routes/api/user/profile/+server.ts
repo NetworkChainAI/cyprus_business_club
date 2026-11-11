@@ -1,6 +1,8 @@
 import type { RequestHandler } from "@sveltejs/kit";
 import prisma from "$lib/prisma";
 import { verifyJwt } from "$lib/jwt";
+import { recalcTrustScore } from "$lib/reputation";
+import { validateFile, sanitizeFileName } from "$lib/server/security";
 import fs from "fs";
 import path from "path";
 
@@ -94,6 +96,7 @@ export const POST: RequestHandler = async ({ cookies, request }) => {
   const location = formData.get("location");
   const phone = formData.get("phone");
   const bio = formData.get("bio");
+  const statusText = formData.get("status");
   const isPrivateRaw = formData.get("isPrivate");
   const file = formData.get("photo") as File | null;
 
@@ -116,7 +119,10 @@ export const POST: RequestHandler = async ({ cookies, request }) => {
   let photoUrl: string | null = null;
 
   if (file && file.size > 0) {
-    const fileExt = path.extname(file.name);
+    const fileErr = validateFile(file, "image");
+    if (fileErr) return json({ error: fileErr }, 400);
+    const safeName = sanitizeFileName(file.name);
+    const fileExt = path.extname(safeName);
     const fileName = `${payload.uid}_${Date.now()}${fileExt}`;
     const filePath = path.join(uploadDir, fileName);
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -131,6 +137,7 @@ export const POST: RequestHandler = async ({ cookies, request }) => {
   if (typeof location === "string") infoCreateUpdate.location = location;
   if (typeof phone === "string") infoCreateUpdate.phoneNumber = phone;
   if (typeof bio === "string") infoCreateUpdate.bio = bio;
+  if (typeof statusText === "string") infoCreateUpdate.status = statusText;
   if (photoUrl) infoCreateUpdate.photo = photoUrl;
 
   const dataToUpdate: any = {};
@@ -191,6 +198,9 @@ export const POST: RequestHandler = async ({ cookies, request }) => {
         },
       },
     });
+
+    // Recalc trust score (photo/phone may have changed)
+    recalcTrustScore(payload.uid).catch(console.error);
 
     return json(updated);
   } catch (err) {

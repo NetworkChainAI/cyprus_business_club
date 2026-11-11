@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { Api } from "$lib/api";
   import ExchangeSelector from "./ExchangeSelector.svelte";
   import ExchangeInput from "./ExchangeInput.svelte";
@@ -194,15 +195,15 @@
           <span class="checkmark">✔</span>
         </div>
 
-        <h2 class="title">Transaction Successful</h2>
+        <h2 class="title">{$t('common.exchange.transactionSuccessful')}</h2>
 
         <p class="subtitle">
-          Your order <b># {order.orderId}</b> has been completed.
+          {$t('common.exchange.orderCompleted')}: #{order.orderId}
         </p>
 
         <p class="desc">
-          You can view all your exchanges anytime on the
-          <a href="/profile">profile</a> page.
+          {$t('common.exchange.viewExchanges')}
+          <a href="/profile">{$t('common.exchange.profilePage')}</a> {$t('common.exchange.page')}
         </p>
 
         <button
@@ -212,7 +213,7 @@
             order = null;
           }}
         >
-          Go Home
+          {$t('common.exchange.goHome')}
         </button>
       </div>
     {:else}
@@ -244,7 +245,7 @@
               />
             </div>
             <ExchangeInput
-              inputTitle="From"
+              inputTitle={$t('common.exchange.from')}
               bind:amount={amountFrom}
               currency={selectedFrom}
               readonly={amountFromFixed ? true : false}
@@ -267,7 +268,7 @@
               />
             </div>
             <ExchangeInput
-              inputTitle="To"
+              inputTitle={$t('common.exchange.to')}
               bind:amount={amountTo}
               checkMinAmount={false}
               readonly
@@ -291,7 +292,7 @@
       {/if}
 
       <button class="primary-btn" disabled={disabled()} on:click={createOrder}
-        >Create
+        >{$t('common.exchange.create')}
       </button>
     </div>
   {/if}

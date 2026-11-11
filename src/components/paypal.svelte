@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from "svelte";
   import { browser } from "$app/environment";
+  import { t } from "$lib/i18n";
 
   export let eventId: string;
 
@@ -28,15 +29,15 @@
 
     switch (issue) {
       case "INSTRUMENT_DECLINED":
-        return "Payment was declined. Please try another payment method.";
+        return t.get('common.paypal.declined');
       case "INSUFFICIENT_FUNDS":
-        return "Insufficient funds. Please choose another payment method.";
+        return t.get('common.paypal.insufficientFunds');
       case "TRANSACTION_REFUSED":
-        return "Transaction was refused. Please try another card or method.";
+        return t.get('common.paypal.refused');
       case "PAYER_ACTION_REQUIRED":
-        return "Additional confirmation is required. Please try again.";
+        return t.get('common.paypal.actionRequired');
       default:
-        return "Payment could not be completed. Please try again.";
+        return t.get('common.paypal.failed');
     }
   }
 
@@ -92,7 +93,7 @@
     // @ts-ignore
     if (!window.paypal) {
       console.error("PayPal SDK not available");
-      dispatch("error", { message: "PayPal is not available right now." });
+      dispatch("error", { message: t.get('common.paypal.unavailable') });
       return;
     }
 
@@ -144,7 +145,7 @@
 
           // ✅ PayPal recommended flow: restart on INSTRUMENT_DECLINED
           if (isInstrumentDeclined(out)) {
-            dispatch("error", { message: "Payment was declined. Please try another method." });
+            dispatch("error", { message: t.get('common.paypal.declined') });
             if (actions?.restart) return actions.restart();
             return;
           }
@@ -163,14 +164,14 @@
 
           console.error("PayPal error:", err);
           dispatch("error", {
-            message: "PayPal error occurred. Please try again.",
+            message: t.get('common.paypal.error'),
             raw: err,
           });
         },
 
         onCancel(data: any) {
           dispatch("error", {
-            message: "Payment was cancelled.",
+            message: t.get('common.paypal.cancelled'),
             data,
           });
         },
@@ -187,7 +188,7 @@
     } catch (e) {
       console.error(e);
       dispatch("error", {
-        message: "Failed to initialize PayPal payment.",
+        message: t.get('common.paypal.initFailed'),
         raw: e,
       });
     }

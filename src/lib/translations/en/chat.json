@@ -1,0 +1,26 @@
+{
+  "tabs": {
+    "dm": "DM",
+    "event": "Event"
+  },
+  "search": "Search chats...",
+  "noChats": "No chats",
+  "typeMessage": "Type a message...",
+  "send": "Send message",
+  "online": "Online now",
+  "lastSeen": "Last seen",
+  "ago": "ago",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "file": "File",
+  "photo": "Photo",
+  "selectChat": "Select a chat to start messaging",
+  "selectChatHint": "Choose a conversation from the list on the left",
+  "noPersonalChats": "No personal chats yet",
+  "noEventChats": "No event chats yet",
+  "loadingMessages": "Loading...",
+  "noMessagesYet": "No messages yet",
+  "newMessage": "New message",
+  "messages": "Messages",
+  "noMessages": "No messages"
+}

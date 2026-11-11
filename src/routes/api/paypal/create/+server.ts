@@ -15,7 +15,13 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) return new Response("Event not found", { status: 404 });
- 
+
+  if (new Date(event.date) < new Date()) {
+    return new Response(JSON.stringify({ error: "This event has already ended" }), {
+      status: 400, headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const price = event.price ?? 0;
   if (price <= 0) {
     return new Response(JSON.stringify({ free: true }), {

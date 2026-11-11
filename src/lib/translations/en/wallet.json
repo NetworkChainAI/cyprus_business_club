@@ -1,0 +1,69 @@
+{
+  "title": "Wallet",
+  "custodial": "Custodial Wallet",
+  "connected": "Connected",
+  "disconnected": "Disconnected",
+  "balance": "Balance",
+  "address": "Address",
+  "copyAddress": "Copy address",
+  "copied": "Copied!",
+  "actions": {
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "transfer": "Transfer"
+  },
+  "deposit": {
+    "title": "Deposit",
+    "scanQr": "Scan QR code or copy address below",
+    "network": "Network",
+    "address": "Your deposit address",
+    "copy": "Copy Address"
+  },
+  "withdraw": {
+    "title": "Withdraw",
+    "to": "Withdraw to",
+    "address": "Wallet address",
+    "addressPlaceholder": "Enter wallet address",
+    "amount": "Amount",
+    "amountPlaceholder": "Enter amount",
+    "max": "Max",
+    "fee": "Network fee",
+    "total": "Total",
+    "submit": "Withdraw",
+    "submitting": "Processing..."
+  },
+  "transfer": {
+    "title": "Transfer",
+    "to": "Transfer to",
+    "recipient": "Recipient email",
+    "recipientPlaceholder": "name@example.com",
+    "amount": "Amount",
+    "amountPlaceholder": "Enter amount",
+    "max": "Max",
+    "message": "Message (optional)",
+    "messagePlaceholder": "Add a note...",
+    "submit": "Transfer",
+    "submitting": "Processing..."
+  },
+  "secret": {
+    "show": "Show secret phrase",
+    "hide": "Hide secret phrase",
+    "warning": "Never share your secret phrase with anyone!"
+  },
+  "otp": {
+    "title": "Enter verification code",
+    "subtitle": "We sent a code to your email",
+    "submit": "Verify",
+    "resend": "Resend code",
+    "digit": "Digit"
+  },
+  "auth": {
+    "loginTitle": "Connect Wallet",
+    "loginSubtitle": "Log in or create a custodial wallet",
+    "email": "Email",
+    "password": "Password",
+    "login": "Log In",
+    "register": "Create Wallet",
+    "or": "or"
+  }
+}

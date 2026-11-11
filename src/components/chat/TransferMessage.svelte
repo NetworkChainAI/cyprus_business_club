@@ -1,14 +1,20 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
+  import { formatTime } from "$lib/utils/dateLocale";
+
   export let msg;
 
   const isMine = msg.isMine;
 
   const title = isMine
-    ? "Вы отправили перевод"
-    : "Вы получили перевод";
+    ? $t('chat.transfer.sent')
+    : $t('chat.transfer.received');
 
-  // msg.content = "Вы отправили перевод 0.01 USDT"
-  const amount = msg.content.replace(/Вы (отправили|получили) перевод/i, "").trim();
+  // msg.content may contain localized prefix — strip both EN and RU variants
+  const amount = msg.content
+    .replace(/Вы (отправили|получили) перевод/i, "")
+    .replace(/You (sent|received) a transfer/i, "")
+    .trim();
 </script>
 
 <div class="transfer-msg {isMine ? 'mine' : 'incoming'}">
@@ -22,7 +28,7 @@
   </div>
 
   <div class="time">
-    {new Date(msg.createdAt).toLocaleTimeString("ru-RU", {
+    {formatTime(msg.createdAt, {
       hour: "2-digit",
       minute: "2-digit"
     })}

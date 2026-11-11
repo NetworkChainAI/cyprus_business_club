@@ -2,6 +2,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 import prisma from '$lib/prisma';
 import { verifyJwt } from '$lib/jwt';
 import { createNotification } from '$lib/services/notifications';
+import { awardSocialCapital } from '$lib/reputation';
 
 export const POST = async ({ cookies, params }: RequestEvent) => {
   try {
@@ -35,6 +36,12 @@ export const POST = async ({ cookies, params }: RequestEvent) => {
       return new Response('Event not found', { status: 404 });
     }
 
+    if (new Date(event.date) < new Date()) {
+      return new Response(JSON.stringify({ error: 'This event has already ended' }), {
+        status: 400, headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const existing = await prisma.eventRegistration.findUnique({
       where: {
         userId_eventId: {
@@ -44,7 +51,6 @@ export const POST = async ({ cookies, params }: RequestEvent) => {
       }
     });
 
-    // ✅ если уже зарегистрирован — всё равно гарантируем участие в чате (на всякий)
     if (existing) {
       if (event.chatId) {
         await prisma.chatParticipant.upsert({
@@ -60,13 +66,11 @@ export const POST = async ({ cookies, params }: RequestEvent) => {
       );
     }
 
-    // ✅ регистрация + добавление в чат — в транзакции
     const reg = await prisma.$transaction(async (tx) => {
       const created = await tx.eventRegistration.create({
         data: { userId, eventId }
       });
 
-      // ✅ добавляем в чат ивента, если он есть
       if (event.chatId) {
         await tx.chatParticipant.upsert({
           where: { userId_chatId: { userId, chatId: event.chatId } },
@@ -104,6 +108,14 @@ export const POST = async ({ cookies, params }: RequestEvent) => {
       });
     }
 
+    // Reputation: +5 SC to organizer for each registration
+    if (event.organizerId && event.organizerId !== userId) {
+      awardSocialCapital(event.organizerId, "EVENT_REGISTRATION_RECEIVED", {
+        refId: `${eventId}_${userId}`,
+        refType: "EVENT",
+      }).catch(console.error);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -116,7 +128,6 @@ export const POST = async ({ cookies, params }: RequestEvent) => {
   } catch (err: any) {
     console.error('Event register error:', err);
 
-    // unique constraint (если где-то параллельно зарегистрировались)
     if (err.code === 'P2002') {
       return new Response(
         JSON.stringify({ message: 'Already registered' }),

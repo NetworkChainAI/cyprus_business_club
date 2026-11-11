@@ -1,9 +1,11 @@
 import { createPublicClient, http, formatUnits } from 'viem';
 import { polygon } from 'viem/chains';
 
+const POLYGON_RPC = process.env.POLYGON_RPC_URL || 'https://polygon-bor-rpc.publicnode.com';
+
 const client = createPublicClient({
   chain: polygon,
-  transport: http()
+  transport: http(POLYGON_RPC)
 });
 
 // Правильная типизация адресов

@@ -15,7 +15,7 @@ export const POST: RequestHandler = async ({ cookies }) => {
 
     if (!payload?.uid) return text("OK", 200);
 
-    await prisma.cbcUser.update({
+    await prisma.cbcUser.updateMany({
       where: { id: payload.uid },
       data: { lastOnline: new Date() },
     });

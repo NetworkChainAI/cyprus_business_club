@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Community" ADD COLUMN     "address" JSONB,
+ADD COLUMN     "lat" DOUBLE PRECISION,
+ADD COLUMN     "lng" DOUBLE PRECISION;

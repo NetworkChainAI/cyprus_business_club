@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { onMount } from "svelte";
 
   export let currency: any;
@@ -25,11 +26,11 @@
 
 <div class="send-container">
   <div class="left">
-    <div class="title">Send</div>
+    <div class="title">{$t('common.exchange.send')}</div>
 
     <!-- Amount -->
     <div class="block">
-      <div class="label">Amount</div>
+      <div class="label">{$t('common.exchange.amount')}</div>
 
       <div class="value">
         <span class="amount">{amount}</span>
@@ -41,7 +42,7 @@
 
     <!-- Address -->
     <div class="block">
-      <div class="label">Deposit Address</div>
+      <div class="label">{$t('common.exchange.depositAddress')}</div>
 
       <div class="address-row">
         <div class="address">{depositAddress}</div>
@@ -53,25 +54,25 @@
       </div>
 
       <div class="warning">
-        Send only <b>{currency?.currencyCode}</b> on
-        <b>{currency?.chain}</b> network.
+        {$t('common.exchange.sendOnly')} <b>{currency?.currencyCode}</b> {$t('common.exchange.on')}
+        <b>{currency?.chain}</b> {$t('common.exchange.network')}.
       </div>
     </div>
 
-    <button class="cancel-btn" on:click={cancelOrder}>Cancel Order</button>
+    <button class="cancel-btn" on:click={cancelOrder}>{$t('common.exchange.cancelOrder')}</button>
   </div>
 
   <!-- Steps -->
   <div class="right">
-    <div class="steps-title">How to send</div>
+    <div class="steps-title">{$t('common.exchange.howToSend')}</div>
 
     <ol class="steps">
-      <li>Open your wallet/exchange</li>
-      <li>Select Withdraw / Send</li>
-      <li>Choose <b>{currency?.currencyCode}</b></li>
-      <li>Select <b>{currency?.chain}</b> network</li>
-      <li>Paste the address above</li>
-      <li>Confirm transaction</li>
+      <li>{$t('common.exchange.step1')}</li>
+      <li>{$t('common.exchange.step2')}</li>
+      <li>{$t('common.exchange.step3')} <b>{currency?.currencyCode}</b></li>
+      <li>{$t('common.exchange.step4')} <b>{currency?.chain}</b></li>
+      <li>{$t('common.exchange.step5')}</li>
+      <li>{$t('common.exchange.step6')}</li>
     </ol>
   </div>
 </div>

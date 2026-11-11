@@ -19,7 +19,6 @@ export const POST = async ({ cookies, request }: RequestEvent) => {
 
     const userId = payload.uid;
 
-    // 🔎 Ищем уже существующий чат 1-на-1
     const existing = await prisma.chat.findFirst({
       where: {
         participants: {
@@ -40,7 +39,6 @@ export const POST = async ({ cookies, request }: RequestEvent) => {
       );
     }
 
-    // 🆕 Создаём чат
     const chat = await prisma.chat.create({
       data: {
         participants: {

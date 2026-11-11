@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "$lib/i18n";
   import { createQuery } from "@tanstack/svelte-query";
   import { Api } from "$lib/api";
   import DataLoader from "../Exchange/DataLoader.svelte";
